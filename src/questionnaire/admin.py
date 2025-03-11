@@ -1,13 +1,12 @@
 from django.contrib import admin
-from .models import Questionnaire, Question, Answer
+from .models import Questionnaire, Question, Answer, UserResponse
 
-class AnswerInline(admin.TabularInline):
-    model = Answer
-    extra = 1
-    fk_name = 'question'  # указываем, что для инлайнов это основной внешний ключ (ссылается на 'question')
-
-class QuestionAdmin(admin.ModelAdmin):
-    inlines = [AnswerInline]
+class UserResponseAdmin(admin.ModelAdmin):
+    list_display = ('questionnaire', 'question', 'selected_answer', 'free_text_answer')
+    list_filter = ('questionnaire',)
+    search_fields = ('question__text', 'selected_answer__text', 'free_text_answer')
 
 admin.site.register(Questionnaire)
-admin.site.register(Question, QuestionAdmin)
+admin.site.register(Question)
+admin.site.register(Answer)
+admin.site.register(UserResponse, UserResponseAdmin)

@@ -2,8 +2,14 @@
 <form method="post">
     {% csrf_token %}
     {% for answer in question.answers.all %}
-        <input type="radio" name="answer" value="{{ answer.id }}" required>
+        <input type="radio" name="answer" value="{{ answer.id }}" {% if answer.is_optional %}checked{% endif %} required="{{ question.is_required }}">
         <label>{{ answer.text }}</label><br>
     {% endfor %}
+
+    {% if question.allow_free_text %}
+        <label>Свободный ответ:</label>
+        <textarea name="free_text"></textarea><br>
+    {% endif %}
+
     <button type="submit">Далее</button>
 </form>
