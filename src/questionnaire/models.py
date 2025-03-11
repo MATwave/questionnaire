@@ -1,19 +1,32 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.utils.timezone import now
+
 
 class Questionnaire(models.Model):
     title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
 
     def __str__(self):
         return self.title
 
 class Question(models.Model):
     text = models.CharField(max_length=500)
+    description = models.CharField(max_length=200, blank=True, help_text="Краткое описание вопроса")  # Краткое описание
     questionnaire = models.ForeignKey(Questionnaire, related_name='questions', on_delete=models.CASCADE)
     is_required = models.BooleanField(default=True)
     allow_free_text = models.BooleanField(default=False)  # Разрешен ли свободный ответ
 
     def __str__(self):
         return self.text
+
+    def save(self, *args, **kwargs):
+        # Если разрешен свободный ответ, устанавливаем is_optional=True для всех ответов
+        if self.allow_free_text:
+            for answer in self.answers.all():
+                answer.is_optional = True
+                answer.save()
+        super().save(*args, **kwargs)
 
 
 class Answer(models.Model):
@@ -25,13 +38,37 @@ class Answer(models.Model):
     def __str__(self):
         return self.text
 
-class UserResponse(models.Model):
-    questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_answer = models.ForeignKey(Answer, null=True, blank=True, on_delete=models.SET_NULL)
-    free_text_answer = models.TextField(blank=True)
+
+
+class AnonymousUserProfile(models.Model):
+    GENDER_CHOICES = [
+        ('M', 'Мужской'),
+        ('F', 'Женский'),
+    ]
+
+    session_key = models.CharField(max_length=40, unique=True)  # Уникальный ключ сессии пользователя
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)  # Пол пользователя
+    age = models.IntegerField(null=True, blank=True)  # Возраст пользователя, опциональное поле
+    height = models.FloatField(null=True, blank=True)  # Рост пользователя, опциональное поле
+    weight = models.FloatField(null=True, blank=True)  # Вес пользователя, опциональное поле
+    filled_survey = models.BooleanField(default=False)  # Отметка о заполнении анкеты
 
     def __str__(self):
-        if self.selected_answer:
-            return f"{self.question.text} → {self.selected_answer.text}"
-        return f"{self.question.text} → {self.free_text_answer}"
+        return f"Профиль анонимного пользователя {self.session_key}"
+
+    class Meta:
+        verbose_name = 'Профиль анонимного пользователя'
+        verbose_name_plural = 'Профили анонимных пользователей'
+
+
+class UserResponse(models.Model):
+    session_key = models.CharField(max_length=40, default='default_session_key')
+    #user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_answer = models.ForeignKey(Answer, null=True, blank=True, on_delete=models.CASCADE)
+    free_text_answer = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=now)
+
+    def __str__(self):
+        return f"Ответ на вопрос {self.question} для анкеты {self.questionnaire} ({self.created_at.strftime('%Y-%m-%d %H:%M:%S')})"

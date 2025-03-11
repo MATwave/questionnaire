@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 django = "^5.1.7"
+django-nested-admin = "^4.1.1"
 
 
 [build-system]
