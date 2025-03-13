@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.timezone import now
 
 
@@ -21,12 +23,14 @@ class Question(models.Model):
         return self.text
 
     def save(self, *args, **kwargs):
-        # Если разрешен свободный ответ, устанавливаем is_optional=True для всех ответов
-        if self.allow_free_text:
-            for answer in self.answers.all():
-                answer.is_optional = True
-                answer.save()
         super().save(*args, **kwargs)
+
+@receiver(post_save, sender=Question)
+def update_answers(sender, instance, created, **kwargs):
+    if instance.allow_free_text:
+        for answer in instance.answers.all():
+            answer.is_optional = True
+            answer.save()
 
 
 class Answer(models.Model):
@@ -34,6 +38,7 @@ class Answer(models.Model):
     question = models.ForeignKey(Question, related_name='answers', on_delete=models.CASCADE)
     next_question = models.ForeignKey(Question, null=True, blank=True, on_delete=models.SET_NULL)
     is_optional = models.BooleanField(default=False)
+    value = models.FloatField(null=True, blank=True, default=0)
 
     def __str__(self):
         return self.text
