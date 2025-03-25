@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{{ questionnaire.title }} - Вопрос{% endblock %}
+{% block title %}Вопрос{% endblock %}
 
 {% block content %}
 <div class="card shadow-sm p-4">
-    <h2 class="text-center">{{ questionnaire.title }}</h2>
+    <!-- Заголовок и прогрессбар -->
+    <h2 class="text-center">Опрос</h2>
 
-    {% if questionnaire.description %}
-        <p class="text-muted text-center"><em>{{ questionnaire.description }}</em></p>
-    {% endif %}
-
-    <!-- Прогрессбар -->
     <div class="d-flex align-items-center mb-4">
         <div class="progress flex-grow-1" style="height: 20px;">
             <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;"
@@ -21,39 +17,70 @@
         <span class="ms-2">{{ answered_questions }}/{{ question_count }}</span>
     </div>
 
+    <!-- Текст вопроса -->
     <h3 class="mt-4">{{ question.text }}</h3>
 
     {% if question.description %}
-        <p class="text-muted">{{ question.description }}</p>  <!-- Описание вопроса -->
+        <p class="text-muted">{{ question.description }}</p>
     {% endif %}
 
+    <!-- Форма с ответами -->
     <form method="post" class="mt-3">
         {% csrf_token %}
 
         <div class="mb-3">
-            {% for answer in question.answers.all %}
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="answer" id="answer{{ answer.id }}" value="{{ answer.id }}"
-                           {% if answer.id == user_response.selected_answer.id %}checked{% endif %}
-                           {% if question.is_required and not question.allow_free_text %}required{% endif %}>
-                    <label class="form-check-label" for="answer{{ answer.id }}">
-                        {{ answer.text }}
-                    </label>
-                </div>
-            {% endfor %}
+            {% if question.is_multiple_choice %}
+                <p class="text-muted small mb-2">Выберите все подходящие варианты:</p>
+                {% for answer in question.answers.all %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               name="answers"
+                               value="{{ answer.id }}"
+                               id="answer{{ answer.id }}"
+                               {% if answer in user_response.selected_answers.all %}checked{% endif %}>
+                        <label class="form-check-label" for="answer{{ answer.id }}">
+                            {{ answer.text }}
+                        </label>
+                    </div>
+                {% endfor %}
+            {% else %}
+                {% for answer in question.answers.all %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio"
+                               name="answers"
+                               value="{{ answer.id }}"
+                               id="answer{{ answer.id }}"
+                               {% if answer in user_response.selected_answers.all %}checked{% endif %}
+                               {% if question.is_required %}required{% endif %}>
+                        <label class="form-check-label" for="answer{{ answer.id }}">
+                            {{ answer.text }}
+                        </label>
+                    </div>
+                {% endfor %}
+            {% endif %}
         </div>
 
+        <!-- Поле для свободного ответа -->
         {% if question.allow_free_text %}
             <div class="mb-3">
-                <label for="free_text" class="form-label">Свободный ответ:</label>
-                <textarea id="free_text" name="free_text" class="form-control" rows="3"></textarea>
+                <label for="free_text" class="form-label">Ваш вариант ответа:</label>
+                <textarea id="free_text"
+                          name="free_text"
+                          class="form-control"
+                          rows="3"
+                          {% if question.is_required and not question.answers.exists %}required{% endif %}>
+                    {{ user_response.free_text_answer|default:"" }}
+                </textarea>
             </div>
-            {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
-            {% endif %}
         {% endif %}
 
-        <button type="submit" class="btn btn-primary w-100">Далее</button>
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary w-100 mt-3">
+            {% if next_question %}Далее{% else %}Завершить опрос{% endif %}
+        </button>
     </form>
 </div>
 {% endblock %}

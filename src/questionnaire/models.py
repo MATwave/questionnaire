@@ -10,6 +10,7 @@ class Question(models.Model):
     is_required = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0,help_text="Порядок отображения вопроса")
     allow_free_text = models.BooleanField(default=False)  # Разрешен ли свободный ответ
+    is_multiple_choice = models.BooleanField(default=False, verbose_name="Множественный выбор")
 
     class Meta:
         ordering = ['order']
@@ -60,7 +61,7 @@ class AnonymousUserProfile(models.Model):
 class UserResponse(models.Model):
     user_profile = models.ForeignKey( AnonymousUserProfile, related_name='responses', on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_answer = models.ForeignKey(Answer, null=True, blank=True, on_delete=models.CASCADE)
+    selected_answers = models.ManyToManyField(Answer, blank=True)
     free_text_answer = models.TextField(blank=True)
     created_at = models.DateTimeField(default=now)
 

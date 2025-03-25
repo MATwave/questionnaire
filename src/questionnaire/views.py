@@ -42,21 +42,15 @@ def questionnaire_view(request, question_order=None):
     if user_profile.filled_survey:
         return redirect('thank_you_view')
 
-    # Получаем все вопросы в правильном порядке
     all_questions = Question.objects.all().order_by('order')
     total_questions = all_questions.count()
 
-    if not all_questions.exists():
-        return redirect('home')
-
-    if total_questions == 0:
+    if not all_questions.exists() or total_questions == 0:
         return redirect('thank_you_view')
 
-    # Получаем текущий прогресс
     answered_questions = UserResponse.objects.filter(user_profile=user_profile).values('question').distinct().count()
     progress = int((answered_questions / total_questions) * 100) if total_questions > 0 else 0
 
-    # Определяем текущий вопрос
     if question_order:
         question = get_object_or_404(Question, order=question_order)
     else:
@@ -64,44 +58,53 @@ def questionnaire_view(request, question_order=None):
         return HttpResponseRedirect(reverse('questionnaire_view', args=[first_question.order]))
 
     if request.method == 'POST':
-        selected_answer_id = request.POST.get('answer')
+        # Изменено: получаем список выбранных ответов
+        selected_answers_ids = request.POST.getlist('answers')
         free_text_answer = request.POST.get('free_text', '').strip() if question.allow_free_text else ""
 
-        selected_answer = Answer.objects.filter(id=selected_answer_id).first() if selected_answer_id else None
+        # Изменено: получаем все выбранные ответы
+        selected_answers = Answer.objects.filter(id__in=selected_answers_ids)
+        error = None
 
         if question.is_required:
-            if question.allow_free_text and not selected_answer and not free_text_answer:
+            # Валидация для множественного выбора
+            if question.is_multiple_choice:
+                if not selected_answers and not free_text_answer:
+                    error = "Выберите хотя бы один вариант ответа" + \
+                            (" или заполните поле" if question.allow_free_text else "")
+            else:
+                # Валидация для одиночного выбора
+                if len(selected_answers) > 1:
+                    error = "Выберите только один вариант ответа"
+                elif not selected_answers and not free_text_answer:
+                    error = "Выберите вариант ответа" + \
+                            (" или заполните поле" if question.allow_free_text else "")
+
+            if error:
                 return render(request, 'questionnaire.html', {
                     'question': question,
                     'progress': progress,
                     'answered_questions': answered_questions,
                     'question_count': total_questions,
-                    'error': 'Пожалуйста, выберите вариант ответа или заполните поле свободного ответа.'
-                })
-            elif not question.allow_free_text and not selected_answer:
-                return render(request, 'questionnaire.html', {
-                    'question': question,
-                    'progress': progress,
-                    'answered_questions': answered_questions,
-                    'question_count': total_questions,
-                    'error': 'Пожалуйста, выберите вариант ответа.'
+                    'error': error
                 })
 
-        # Сохраняем ответ
-        UserResponse.objects.update_or_create(
+        # Изменено: сохраняем несколько ответов
+        response, created = UserResponse.objects.update_or_create(
             user_profile=user_profile,
             question=question,
-            defaults={
-                'selected_answer': selected_answer,
-                'free_text_answer': free_text_answer
-            }
+            defaults={'free_text_answer': free_text_answer}
         )
+        response.selected_answers.set(selected_answers)
 
-        # Определяем следующий вопрос
+        # Определение следующего вопроса (первого из выбранных ответов)
         next_question = None
-        if selected_answer and selected_answer.next_question:
-            next_question = selected_answer.next_question
-        else:
+        if selected_answers.exists():
+            first_answer = selected_answers.first()
+            if first_answer.next_question:
+                next_question = first_answer.next_question
+
+        if not next_question:
             next_question = Question.objects.filter(order__gt=question.order).order_by('order').first()
 
         if next_question:
@@ -117,7 +120,6 @@ def questionnaire_view(request, question_order=None):
         'answered_questions': answered_questions,
         'question_count': total_questions
     })
-
 
 def thank_you_view(request):
     return render(request, 'thank_you.html')
