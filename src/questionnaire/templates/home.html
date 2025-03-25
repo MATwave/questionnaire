@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-12">
+      <div class="card survey-card shadow-lg">
+        <div class="card-body text-center py-5">
+          <h1 class="mb-4">Комплексный опрос здоровья</h1>
+          <p class="lead mb-4">Пройдите наш детальный опрос и получите персональные рекомендации по улучшению вашего здоровья и образа жизни</p>
+
+          <div class="d-grid gap-3">
+            <a href="{% url 'user_profile_view' %}" class="btn btn-primary btn-lg">
+              Начать опрос
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-5">
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 survey-card">
+            <div class="card-body">
+              <h5 class="card-title">📋 Что включено</h5>
+              <ul class="list-unstyled">
+                <li>✓ Антропометрические данные</li>
+                <li>✓ Оценка питания</li>
+                <li>✓ Анализ активности</li>
+                <li>✓ Стресс-факторы</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 survey-card">
+            <div class="card-body">
+              <h5 class="card-title">⏱ Время прохождения</h5>
+              <p class="card-text">Всего 7-10 минут</p>
+              <p class="text-muted small">Опрос адаптируется под ваши ответы</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 survey-card">
+            <div class="card-body">
+              <h5 class="card-title">🔒 Конфиденциальность</h5>
+              <p class="card-text">Все данные анонимны </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
