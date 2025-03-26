@@ -3,9 +3,11 @@ from collections import defaultdict
 
 from django.contrib import admin
 import nested_admin
+from django.db.models import Prefetch
 from django.http import HttpResponse
 
 from .models import Question, Answer, UserResponse, AnonymousUserProfile
+from .utils import get_question_categories, calculate_user_rating
 
 
 @admin.action(description="Экспортировать ответы в CSV")
@@ -15,116 +17,57 @@ def export_responses_csv(modeladmin, request, queryset):
 
     writer = csv.writer(response, delimiter='\t')
 
-    questions = Question.objects.all().order_by('order')
-    question_texts = [q.text for q in questions]
+    questions = Question.objects.order_by('order')
 
-    headers = (
-            ['Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)'] +
-            question_texts +
-            ['МБФ', 'ФАиРД', 'СТП', 'Образ жизни', 'Питание',
-             'Пищевое поведение', 'Продукты питания', 'Стресс',
-             'ИТОГО', 'Оценка соответствия']
-    )
+    headers = [
+        'Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)',
+        *questions.values_list('text', flat=True),
+        'МБФ', 'ФАиРД', 'СТП', 'Образ жизни', 'Питание',
+        'Пищевое поведение', 'Продукты питания', 'Стресс',
+        'ИТОГО', 'Оценка соответствия'
+    ]
     writer.writerow(headers)
 
-    # Определение категорий вопросов
-    stress_questions = {q.id for q in questions.filter(description="СТРЕСС")}
-    nutrition_questions = {q.id for q in questions.filter(description="ПИТАНИЕ")}
-    eating_behavior_questions = {q.id for q in questions.filter(
-        description="Как часто Вы употребляете следующие продукты и напитки")}
-    work_assessment_questions = {q.id for q in questions.filter(
-        description="САМООЦЕНКА ТРУДОВОГО ПРОЦЕССА")}
+    user_profiles = AnonymousUserProfile.objects.prefetch_related(
+        Prefetch('responses', queryset=UserResponse.objects.prefetch_related('selected_answers'))
+    ).distinct()
 
-    responses_by_user = defaultdict(
-        lambda: {
-            'created_at': None, 'gender': '', 'age': '',
-            'height': '', 'weight': '', 'answers': {},
-            'stress_values': [], 'nutrition_values': [],
-            'eating_behavior_values': [], 'work_assessment_values': []
-        }
-    )
+    for profile in user_profiles:
+        rating_data = calculate_user_rating(profile)
 
-    responses = UserResponse.objects.prefetch_related('selected_answers').select_related('user_profile', 'question')
-
-    for response_obj in responses:
-        user_profile = response_obj.user_profile
-        user_data = responses_by_user[user_profile.id]
-
-        # Основные данные профиля
-        user_data.update({
-            'gender': user_profile.gender or '',
-            'age': user_profile.age or '',
-            'height': user_profile.height or '',
-            'weight': user_profile.weight or '',
-            'created_at': response_obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        })
-
-        # Обработка ответов
-        answers_text = []
-        values = []
-
-        for answer in response_obj.selected_answers.all():
-            answers_text.append(answer.text)
-            if answer.value is not None:
-                values.append(answer.value)
-
-        # Сохраняем текст ответов
-        user_data['answers'][response_obj.question.text] = ", ".join(answers_text)
-
-        # Распределение значений по категориям
-        q_id = response_obj.question.id
-        for val in values:
-            if q_id in stress_questions:
-                user_data['stress_values'].append(val)
-            elif q_id in nutrition_questions:
-                user_data['nutrition_values'].append(val)
-            elif q_id in eating_behavior_questions:
-                user_data['eating_behavior_values'].append(val)
-            elif q_id in work_assessment_questions:
-                user_data['work_assessment_values'].append(val)
-
-    # Формирование строк отчета
-    for user_id, data in responses_by_user.items():
-        # Расчет средних значений
-        def avg(values):
-            return sum(values) / len(values) if values else ''
-
-        stress_avg = avg(data['stress_values'])
-        nutrition_avg = avg(data['nutrition_values'])
-        eating_avg = avg(data['eating_behavior_values'])
-        work_avg = avg(data['work_assessment_values'])
-
-        # Общий балл
-        total_values = [v for v in [stress_avg, nutrition_avg, eating_avg, work_avg]
-                        if isinstance(v, (int, float))]
-        total_score = avg(total_values) if total_values else ''
-
-        # Оценка соответствия
-        if isinstance(total_score, float):
-            if total_score <= 0.47:
-                rating = "Неудовлетворительная"
-            elif 0.47 < total_score <= 0.67:
-                rating = "Удовлетворительная"
-            elif 0.67 < total_score <= 0.89:
-                rating = "Хорошая"
-            else:
-                rating = "Оптимальная"
-        else:
-            rating = ""
-
+        # Основные данные
         row = [
-            data['created_at'],
-            data['gender'],
-            data['age'],
-            data['height'],
-            data['weight'],
-            *[data['answers'].get(q.text, '') for q in questions],
-            '', '', work_avg, '', nutrition_avg, eating_avg, '', stress_avg,
-            total_score,
-            rating
+            profile.responses.first().created_at.strftime('%Y-%m-%d %H:%M:%S') if profile.responses.exists() else '',
+            profile.gender or '',
+            profile.age or '',
+            profile.height or '',
+            profile.weight or '',
         ]
 
-        writer.writerow(row)
+        # Ответы на вопросы
+        question_responses = {r.question_id: r for r in profile.responses.all()}
+        answers_row = []
+        for q in questions:
+            response_obj = question_responses.get(q.id)
+            answers = ", ".join(a.text for a in response_obj.selected_answers.all()) if response_obj else ""
+            answers_row.append(answers)
+
+        row += answers_row
+
+        # Специальные колонки
+        special_columns = [
+            '', '',  # МБФ, ФАиРД
+            rating_data.get('work_assessment_avg', 0),  # СТП
+            '',  # Образ жизни
+            rating_data.get('nutrition_avg', 0),  # Питание
+            rating_data.get('eating_behavior_avg', 0),  # Пищевое поведение
+            '',  # Продукты питания
+            rating_data.get('stress_avg', 0),  # Стресс
+            rating_data['total_score'],  # ИТОГО
+            rating_data['rating']  # Оценка соответствия
+        ]
+
+        writer.writerow(row + special_columns)
 
     return response
 

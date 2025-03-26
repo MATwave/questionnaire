@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 
 from .models import Question, Answer, UserResponse, AnonymousUserProfile
+from .utils import calculate_user_rating
 
 
 def user_profile_view(request):
@@ -140,8 +141,21 @@ def questionnaire_view(request, question_order=None):
         'question_count': total_questions
     })
 
+
 def thank_you_view(request):
-    return render(request, 'thank_you.html')
+    session_key = request.session.session_key
+    if not session_key:
+        return redirect('home')
+
+    user_profile = get_object_or_404(AnonymousUserProfile, session_key=session_key)
+
+    if not user_profile.filled_survey:
+        return redirect('questionnaire_start')
+
+    # Получаем данные рейтинга
+    rating_data = calculate_user_rating(user_profile)
+
+    return render(request, 'thank_you.html', rating_data)
 
 def home_view(request):
     return render(request, 'home.html')

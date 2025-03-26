@@ -4,10 +4,117 @@
 
 {% block content %}
 <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-sm p-4 text-center">
-        <h2 class="text-success">Спасибо за прохождение анкеты!</h2>
-        <p class="mt-3">Мы обработаем ваши ответы.</p>
+    <div class="card shadow-sm p-4 text-center" style="max-width: 600px; width: 100%;">
+        <h2 class="text-success mb-4">Спасибо за прохождение анкеты!</h2>
+
+        <!-- Блок с результатами -->
+        <div class="results-block mb-4">
+            <h4 class="mb-3">Ваши результаты:</h4>
+
+            <div class="alert alert-primary">
+                <h5 class="mb-2">Общая оценка:</h5>
+                <div class="display-4 text-dark mb-2">{{ rating }}</div>
+                <p class="mb-0">Средний балл: {{ total_score|floatformat:2 }}</p>
+            </div>
+
+            <!-- Рекомендации -->
+            <div class="mt-4">
+                {% if rating == "Неудовлетворительная" %}
+                <div class="alert alert-danger">
+                    <h5 class="mb-2">🚨 Рекомендации:</h5>
+                    <ul class="text-start">
+                        <li>Пройти консультацию у профильного специалиста</li>
+                        <li>Пересмотреть режим питания и физической активности</li>
+                        <li>Регулярно проводить самоконтроль показателей</li>
+                        <li>Исключить основные факторы риска</li>
+                    </ul>
+                </div>
+                {% elif rating == "Удовлетворительная" %}
+                <div class="alert alert-warning">
+                    <h5 class="mb-2">⚠️ Рекомендации:</h5>
+                    <ul class="text-start">
+                        <li>Оптимизировать режим труда и отдыха</li>
+                        <li>Увеличить физическую активность</li>
+                        <li>Скорректировать рацион питания</li>
+                        <li>Провести повторное тестирование через 2 месяца</li>
+                    </ul>
+                </div>
+                {% elif rating == "Хорошая" %}
+                <div class="alert alert-info">
+                    <h5 class="mb-2">👍 Рекомендации:</h5>
+                    <ul class="text-start">
+                        <li>Поддерживать текущие положительные практики</li>
+                        <li>Провести углубленную диагностику</li>
+                        <li>Оптимизировать отдельные аспекты образа жизни</li>
+                        <li>Повторить тестирование через 6 месяцев</li>
+                    </ul>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <h5 class="mb-2">🎉 Рекомендации:</h5>
+                    <ul class="text-start">
+                        <li>Продолжать текущую стратегию</li>
+                        <li>Делиться позитивным опытом</li>
+                        <li>Мониторить показатели 1 раз в год</li>
+                        <li>Рассмотреть возможность наставничества</li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-3 text-start">
+                <h5 class="mb-3">Детализация:</h5>
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Стресс
+                        <span class="badge bg-primary rounded-pill">{{ stress_avg|floatformat:2 }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Питание
+                        <span class="badge bg-primary rounded-pill">{{ nutrition_avg|floatformat:2 }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Пищевое поведение
+                        <span class="badge bg-primary rounded-pill">{{ eating_behavior_avg|floatformat:2 }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Самооценка труда
+                        <span class="badge bg-primary rounded-pill">{{ work_assessment_avg|floatformat:2 }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
         <a href="/" class="btn btn-primary mt-3">Вернуться на главную</a>
     </div>
 </div>
+
+<style>
+    .results-block {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid #eee;
+    }
+
+    .display-4 {
+        font-size: 2.5rem;
+        font-weight: 300;
+        line-height: 1.2;
+    }
+
+    .badge.rounded-pill {
+        font-size: 0.9em;
+        min-width: 50px;
+    }
+
+    .alert ul {
+        margin-bottom: 0;
+        padding-left: 1.5rem;
+    }
+
+    .alert li {
+        margin: 0.3rem 0;
+    }
+</style>
 {% endblock %}
