@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -17,6 +18,10 @@ class Question(models.Model):
 
     def __str__(self):
         return self.text
+
+    def clean(self):
+        if self.allow_free_text and self.is_multiple_choice:
+            raise ValidationError("Свободный ответ не может быть разрешен для вопросов с множественным выбором")
 
 @receiver(post_save, sender=Question)
 def update_answers(sender, instance, created, **kwargs):

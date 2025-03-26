@@ -58,51 +58,70 @@ def questionnaire_view(request, question_order=None):
         return HttpResponseRedirect(reverse('questionnaire_view', args=[first_question.order]))
 
     if request.method == 'POST':
-        # Изменено: получаем список выбранных ответов
         selected_answers_ids = request.POST.getlist('answers')
         free_text_answer = request.POST.get('free_text', '').strip() if question.allow_free_text else ""
-
-        # Изменено: получаем все выбранные ответы
-        selected_answers = Answer.objects.filter(id__in=selected_answers_ids)
         error = None
+        has_free_text = 'free_text' in selected_answers_ids
+        selected_answers = Answer.objects.none()
 
-        if question.is_required:
-            # Валидация для множественного выбора
+        # Валидация выбора free_text
+        if has_free_text:
+            if len(selected_answers_ids) > 1:
+                error = "Нельзя выбирать другие варианты вместе с 'Другой вариант'"
+            elif not question.allow_free_text:
+                error = "Свободный ответ не разрешен для этого вопроса"
+            elif not free_text_answer:
+                error = "Укажите ваш вариант ответа"
+        else:
+            # Обрабатываем обычные ответы
+            selected_answers = Answer.objects.filter(id__in=selected_answers_ids)
+            if free_text_answer:
+                error = "Уберите текст или выберите 'Другой вариант'"
+
+        # Общая валидация обязательности
+        if question.is_required and not error:
             if question.is_multiple_choice:
-                if not selected_answers and not free_text_answer:
-                    error = "Выберите хотя бы один вариант ответа" + \
-                            (" или заполните поле" if question.allow_free_text else "")
+                if not selected_answers.exists() and not (has_free_text and free_text_answer):
+                    error = "Выберите хотя бы один вариант" + (
+                        " или заполните поле" if question.allow_free_text else "")
             else:
-                # Валидация для одиночного выбора
-                if len(selected_answers) > 1:
-                    error = "Выберите только один вариант ответа"
-                elif not selected_answers and not free_text_answer:
-                    error = "Выберите вариант ответа" + \
-                            (" или заполните поле" if question.allow_free_text else "")
+                if len(selected_answers_ids) > 1:
+                    error = "Выберите только один вариант"
+                elif not selected_answers.exists() and not (has_free_text and free_text_answer):
+                    error = "Выберите вариант" + (" или заполните поле" if question.allow_free_text else "")
 
-            if error:
-                return render(request, 'questionnaire.html', {
-                    'question': question,
-                    'progress': progress,
-                    'answered_questions': answered_questions,
-                    'question_count': total_questions,
-                    'error': error
-                })
+        if error:
+            return render(request, 'questionnaire.html', {
+                'question': question,
+                'progress': progress,
+                'answered_questions': answered_questions,
+                'question_count': total_questions,
+                'error': error,
+                'user_response': {
+                    'selected_answers': selected_answers,
+                    'free_text_answer': free_text_answer
+                }
+            })
 
-        # Изменено: сохраняем несколько ответов
+        # Сохранение ответа
         response, created = UserResponse.objects.update_or_create(
             user_profile=user_profile,
             question=question,
-            defaults={'free_text_answer': free_text_answer}
+            defaults={'free_text_answer': free_text_answer if has_free_text else ''}
         )
         response.selected_answers.set(selected_answers)
 
-        # Определение следующего вопроса (первого из выбранных ответов)
+        # Определение следующего вопроса
         next_question = None
-        if selected_answers.exists():
+        if has_free_text:
+            # Для свободного ответа ищем следующий вопрос по порядку
+            next_question = Question.objects.filter(order__gt=question.order).order_by('order').first()
+        elif selected_answers.exists():
+            # Логика определения следующего вопроса через ответы
             first_answer = selected_answers.first()
-            if first_answer.next_question:
-                next_question = first_answer.next_question
+            next_question = first_answer.next_question or Question.objects.filter(
+                order__gt=question.order
+            ).order_by('order').first()
 
         if not next_question:
             next_question = Question.objects.filter(order__gt=question.order).order_by('order').first()

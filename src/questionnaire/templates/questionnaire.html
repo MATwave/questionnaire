@@ -30,6 +30,7 @@
 
         <div class="mb-3">
             {% if question.is_multiple_choice %}
+                <!-- Множественный выбор (оставляем как есть) -->
                 <p class="text-muted small mb-2">Выберите все подходящие варианты:</p>
                 {% for answer in question.answers.all %}
                     <div class="form-check">
@@ -44,6 +45,7 @@
                     </div>
                 {% endfor %}
             {% else %}
+                <!-- Одиночный выбор с возможностью свободного ответа -->
                 {% for answer in question.answers.all %}
                     <div class="form-check">
                         <input class="form-check-input" type="radio"
@@ -57,22 +59,33 @@
                         </label>
                     </div>
                 {% endfor %}
+
+                <!-- Радиокнопка для свободного ответа -->
+                {% if question.allow_free_text %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio"
+                               name="answers"
+                               value="free_text"
+                               id="answer_free_text"
+                               {% if user_response.free_text_answer %}checked{% endif %}>
+                        <label class="form-check-label" for="answer_free_text">
+                            Другой вариант (укажите ниже)
+                        </label>
+                    </div>
+
+                    <!-- Поле для свободного ответа (изначально скрыто) -->
+                    <div class="mb-3 free-text-field" style="display: none;">
+                        <label for="free_text" class="form-label">Ваш вариант ответа:</label>
+                        <textarea id="free_text"
+                                  name="free_text"
+                                  class="form-control"
+                                  rows="3"
+                                  {% if question.is_required %}required{% endif %}
+                        >{{ user_response.free_text_answer|default:""|striptags }}</textarea>
+                    </div>
+                {% endif %}
             {% endif %}
         </div>
-
-        <!-- Поле для свободного ответа -->
-        {% if question.allow_free_text %}
-            <div class="mb-3">
-                <label for="free_text" class="form-label">Ваш вариант ответа:</label>
-                <textarea id="free_text"
-                          name="free_text"
-                          class="form-control"
-                          rows="3"
-                          {% if question.is_required and not question.answers.exists %}required{% endif %}>
-                    {{ user_response.free_text_answer|default:"" }}
-                </textarea>
-            </div>
-        {% endif %}
 
         {% if error %}
             <div class="alert alert-danger">{{ error }}</div>
@@ -83,4 +96,34 @@
         </button>
     </form>
 </div>
+
+<!-- Скрипт для управления видимостью текстового поля -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const freeTextRadio = document.getElementById('answer_free_text');
+    const freeTextField = document.querySelector('.free-text-field');
+    const textarea = document.getElementById('free_text');
+
+    function toggleFreeText() {
+        if (freeTextRadio && freeTextRadio.checked) {
+            freeTextField.style.display = 'block';
+            textarea.required = true;
+        } else if (freeTextField) {
+            freeTextField.style.display = 'none';
+            textarea.required = false;
+        }
+    }
+
+    // Инициализация при загрузке
+    toggleFreeText();
+
+    // Слушаем изменения всех радиокнопок
+    if (freeTextRadio) {
+        document.querySelectorAll('input[name="answers"]').forEach(radio => {
+            radio.addEventListener('change', toggleFreeText);
+        });
+    }
+});
+</script>
+
 {% endblock %}
