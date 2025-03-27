@@ -97,21 +97,26 @@ class AnswerInline(nested_admin.NestedStackedInline):
 class QuestionAdmin(nested_admin.NestedModelAdmin):
     list_display = ['text', 'order', 'is_required']
     list_display_links = ['text']
+    list_editable = ['order']  # Разрешаем редактирование порядка
     inlines = [AnswerInline]
     ordering = ['order']
     actions = [export_responses_csv]
     save_on_top = True
     list_per_page = 20
 
-    fieldsets = (
-        (None, {
-            'fields': ('text', 'description', 'order')
-        }),
-        ('Настройки', {
-            'fields': ('is_required', 'allow_free_text', 'is_multiple_choice'),
-            'classes': ('collapse',),
-        }),
-    )
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj:
+            return fieldsets
+        return (
+            (None, {
+                'fields': ('text', 'description')
+            }),
+            ('Настройки', {
+                'fields': ('is_required', 'allow_free_text', 'is_multiple_choice'),
+                'classes': ('collapse',),
+            }),
+        )
 
     verbose_name = 'Вопрос'
     verbose_name_plural = 'Вопросы'

@@ -6,20 +6,24 @@ def get_question_categories():
     """Возвращает категории вопросов с их описаниями и метками"""
     return {
         'stress': {
-            'description': "СТРЕСС",
+            'descriptions': ["СТРЕСС"],
             'label': 'СТРЕСС'
         },
         'nutrition': {
-            'description': "ПИТАНИЕ",
+            'descriptions': ["ПИТАНИЕ"],
             'label': 'ПИТАНИЕ'
         },
         'eating_behavior': {
-            'description': "Как часто Вы употребляете следующие продукты и напитки",
+            'descriptions': ["Как часто Вы употребляете следующие продукты и напитки"],
             'label': 'Пищевое поведение'
         },
         'work_assessment': {
-            'description': "САМООЦЕНКА ТРУДОВОГО ПРОЦЕССА",
+            'descriptions': ["САМООЦЕНКА ТРУДОВОГО ПРОЦЕССА"],
             'label': 'Самооценка труда'
+        },
+        'lifestyle': {
+            'descriptions': ["ОБРАЗ ЖИЗНИ И РЕЖИМ ДНЯ", "Курение (сигарет в день)", "Курение (лет стажа)"],
+            'label': 'Образ жизни и ФАиРД'
         }
     }
 
@@ -43,24 +47,41 @@ def calculate_user_rating(user_profile):
             'nutrition_avg': 0.0,
             'eating_behavior_avg': 0.0,
             'work_assessment_avg': 0.0,
+            'lifestyle_avg': 0.0,
             'total_score': 0.0,
             'rating': 'Нет данных'
         }
 
     # Инициализация словаря для сбора значений
     category_values = {key: [] for key in categories}
+    smoking_data = {'cigarettes': 0, 'years': 0}
 
     # Собираем значения ответов по категориям
     for response in responses:
         category = next(
             (key for key, params in categories.items()
-             if response.question.description == params['description']),
+             if response.question.description in params['descriptions']),
             None
         )
 
         if category:
-            values = [a.value for a in response.selected_answers.all() if a.value is not None]
-            category_values[category].extend(values)
+            if category == 'lifestyle':
+                # Собираем данные для расчета индекса курильщика
+                if response.question.description == "Курение (сигарет в день)":
+                    smoking_data['cigarettes'] = sum(a.value for a in response.selected_answers.all())
+                elif response.question.description == "Курение (лет стажа)":
+                    smoking_data['years'] = sum(a.value for a in response.selected_answers.all())
+                else:
+                    values = [a.value for a in response.selected_answers.all() if a.value is not None]
+                    category_values['lifestyle'].extend(values)
+            else:
+                values = [a.value for a in response.selected_answers.all() if a.value is not None]
+                category_values[category].extend(values)
+
+    # Расчет индекса курильщика
+    if smoking_data['cigarettes'] > 0 and smoking_data['years'] > 0:
+        smoking_index = (smoking_data['cigarettes'] * smoking_data['years']) / 20  # Пример формулы
+        category_values['lifestyle'].append(min(smoking_index, 1.0))  # Нормализуем до 1.0
 
     # Расчет средних значений
     def safe_avg(values):

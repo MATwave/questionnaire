@@ -23,7 +23,8 @@ class Question(models.Model):
     order = models.PositiveIntegerField(
         default=0,
         verbose_name='Порядок',
-        help_text="Число для порядка отображения (меньшее = выше)"
+        help_text="Число для порядка отображения (меньшее = выше)",
+        unique=True
     )
     allow_free_text = models.BooleanField(
         default=False,
@@ -45,6 +46,35 @@ class Question(models.Model):
     def clean(self):
         if self.allow_free_text and self.is_multiple_choice:
             raise ValidationError("Свободный ответ не может быть разрешен для вопросов с множественным выбором")
+
+        if self._state.adding:  # Только для новых объектов
+            if self.order == 0:
+                last_order = Question.objects.aggregate(models.Max('order'))['order__max'] or 0
+                self.order = last_order + 1
+            else:
+                if Question.objects.filter(order=self.order).exists():
+                    raise ValidationError(
+                        {'order': 'Порядок должен быть уникальным. Существующий порядок: %(value)s',
+                         'params': {'value': self.order}}
+                    )
+
+    def save(self, *args, **kwargs):
+        # Автоматическое назначение порядка при создании
+        if self._state.adding and self.order == 0:
+            last_order = Question.objects.aggregate(models.Max('order'))['order__max'] or 0
+            self.order = last_order + 1
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = 'Вопрос'
+        verbose_name_plural = 'Вопросы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['order'],
+                name='unique_question_order'
+            )
+        ]
 
 
 @receiver(post_save, sender=Question)
