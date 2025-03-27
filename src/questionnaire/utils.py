@@ -36,6 +36,17 @@ def calculate_user_rating(user_profile):
         'question'
     )
 
+    # Если нет ни одного ответа
+    if not responses.exists():
+        return {
+            'stress_avg': 0.0,
+            'nutrition_avg': 0.0,
+            'eating_behavior_avg': 0.0,
+            'work_assessment_avg': 0.0,
+            'total_score': 0.0,
+            'rating': 'Нет данных'
+        }
+
     # Инициализация словаря для сбора значений
     category_values = {key: [] for key in categories}
 
@@ -53,13 +64,13 @@ def calculate_user_rating(user_profile):
 
     # Расчет средних значений
     def safe_avg(values):
-        return sum(values) / len(values) if values else 0
+        return round(sum(values) / len(values), 4) if values else 0.0
 
     results = {f'{key}_avg': safe_avg(vals) for key, vals in category_values.items()}
 
-    # Расчет общего балла
+    # Расчет общего балла (только по категориям с данными)
     total_values = [v for v in results.values() if v > 0]
-    results['total_score'] = safe_avg(total_values) if total_values else 0
+    results['total_score'] = safe_avg(total_values) if total_values else 0.0
 
     # Определение рейтинга
     if results['total_score'] <= 0.47:
@@ -70,5 +81,10 @@ def calculate_user_rating(user_profile):
         results['rating'] = "Хорошая"
     else:
         results['rating'] = "Оптимальная"
+
+    # Округляем значения для вывода
+    for key in results:
+        if isinstance(results[key], float):
+            results[key] = round(results[key], 2)
 
     return results
