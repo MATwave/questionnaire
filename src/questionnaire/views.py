@@ -61,35 +61,46 @@ def questionnaire_view(request, question_order=None):
     if request.method == 'POST':
         selected_answers_ids = request.POST.getlist('answers')
         free_text_answer = request.POST.get('free_text', '').strip() if question.allow_free_text else ""
+        numeric_answer = request.POST.get('numeric_answer', '').strip() if question.is_numeric_input else None
         error = None
         has_free_text = 'free_text' in selected_answers_ids
         selected_answers = Answer.objects.none()
 
-        # Валидация выбора free_text
-        if has_free_text:
-            if len(selected_answers_ids) > 1:
-                error = "Нельзя выбирать другие варианты вместе с 'Другой вариант'"
-            elif not question.allow_free_text:
-                error = "Свободный ответ не разрешен для этого вопроса"
-            elif not free_text_answer:
-                error = "Укажите ваш вариант ответа"
-        else:
-            # Обрабатываем обычные ответы
-            selected_answers = Answer.objects.filter(id__in=selected_answers_ids)
-            if free_text_answer:
-                error = "Уберите текст или выберите 'Другой вариант'"
-
-        # Общая валидация обязательности
-        if question.is_required and not error:
-            if question.is_multiple_choice:
-                if not selected_answers.exists() and not (has_free_text and free_text_answer):
-                    error = "Выберите хотя бы один вариант" + (
-                        " или заполните поле" if question.allow_free_text else "")
+        # Валидация для числовых вопросов
+        if question.is_numeric_input:
+            if not numeric_answer:
+                error = "Введите числовое значение"
             else:
+                try:
+                    numeric_answer = float(numeric_answer)
+                    if numeric_answer < 0:
+                        error = "Значение не может быть отрицательным"
+                except ValueError:
+                    error = "Введите корректное число"
+        else:
+            # Валидация для обычных вопросов
+            if has_free_text:
                 if len(selected_answers_ids) > 1:
-                    error = "Выберите только один вариант"
-                elif not selected_answers.exists() and not (has_free_text and free_text_answer):
-                    error = "Выберите вариант" + (" или заполните поле" if question.allow_free_text else "")
+                    error = "Нельзя выбирать другие варианты вместе с 'Другой вариант'"
+                elif not question.allow_free_text:
+                    error = "Свободный ответ не разрешен для этого вопроса"
+                elif not free_text_answer:
+                    error = "Укажите ваш вариант ответа"
+            else:
+                selected_answers = Answer.objects.filter(id__in=selected_answers_ids)
+                if free_text_answer:
+                    error = "Уберите текст или выберите 'Другой вариант'"
+
+            if question.is_required and not error:
+                if question.is_multiple_choice:
+                    if not selected_answers.exists() and not (has_free_text and free_text_answer):
+                        error = "Выберите хотя бы один вариант" + (
+                            " или заполните поле" if question.allow_free_text else "")
+                else:
+                    if len(selected_answers_ids) > 1:
+                        error = "Выберите только один вариант"
+                    elif not selected_answers.exists() and not (has_free_text and free_text_answer):
+                        error = "Выберите вариант" + (" или заполните поле" if question.allow_free_text else "")
 
         if error:
             return render(request, 'questionnaire.html', {
@@ -100,7 +111,8 @@ def questionnaire_view(request, question_order=None):
                 'error': error,
                 'user_response': {
                     'selected_answers': selected_answers,
-                    'free_text_answer': free_text_answer
+                    'free_text_answer': free_text_answer,
+                    'numeric_answer': numeric_answer
                 }
             })
 
@@ -108,14 +120,18 @@ def questionnaire_view(request, question_order=None):
         response, created = UserResponse.objects.update_or_create(
             user_profile=user_profile,
             question=question,
-            defaults={'free_text_answer': free_text_answer if has_free_text else ''}
+            defaults={
+                'free_text_answer': free_text_answer if has_free_text else '',
+                'numeric_answer': numeric_answer if question.is_numeric_input else None
+            }
         )
-        response.selected_answers.set(selected_answers)
+        if not question.is_numeric_input:
+            response.selected_answers.set(selected_answers)
 
         # Определение следующего вопроса
         next_question = None
-        if has_free_text:
-            # Для свободного ответа ищем следующий вопрос по порядку
+
+        if question.is_numeric_input or has_free_text:
             next_question = Question.objects.filter(order__gt=question.order).order_by('order').first()
         elif selected_answers.exists():
             # Логика определения следующего вопроса через ответы
@@ -127,6 +143,7 @@ def questionnaire_view(request, question_order=None):
         if not next_question:
             next_question = Question.objects.filter(order__gt=question.order).order_by('order').first()
 
+        # Проверка завершения опроса
         if next_question:
             return HttpResponseRedirect(reverse('questionnaire_view', args=[next_question.order]))
         else:
@@ -138,7 +155,8 @@ def questionnaire_view(request, question_order=None):
         'question': question,
         'progress': progress,
         'answered_questions': answered_questions,
-        'question_count': total_questions
+        'question_count': total_questions,
+        'next_question_exists': question.order < total_questions
     })
 
 

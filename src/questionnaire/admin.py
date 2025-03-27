@@ -58,7 +58,10 @@ def export_responses_csv(modeladmin, request, queryset):
         for q in questions:
             response_obj = question_responses.get(q.id)
             if response_obj:
-                answers = ", ".join(a.text for a in response_obj.selected_answers.all())
+                if q.is_numeric_input:
+                    answers = str(response_obj.numeric_answer)
+                else:
+                    answers = ", ".join(a.text for a in response_obj.selected_answers.all())
             else:
                 answers = "Нет ответа"
             answers_row.append(answers)
@@ -104,23 +107,40 @@ class QuestionAdmin(nested_admin.NestedModelAdmin):
     save_on_top = True
     list_per_page = 20
 
+    fieldsets = (
+        (None, {
+            'fields': ('text', 'description', 'order')
+        }),
+        ('Тип вопроса', {
+            'fields': ('is_required', 'is_numeric_input'),
+            'classes': ('collapse',),
+        }),
+        ('Дополнительные настройки', {
+            'fields': ('allow_free_text', 'is_multiple_choice'),
+            'classes': ('collapse',),
+            'description': 'Доступно только для не-числовых вопросов'
+        }),
+    )
+
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
-        if obj:
-            return fieldsets
-        return (
-            (None, {
-                'fields': ('text', 'description')
-            }),
-            ('Настройки', {
-                'fields': ('is_required', 'allow_free_text', 'is_multiple_choice'),
-                'classes': ('collapse',),
-            }),
-        )
+        if obj and obj.is_numeric_input:
+            # Скрываем дополнительные настройки для числовых вопросов
+            return [fieldset for fieldset in fieldsets if fieldset[0] != 'Дополнительные настройки']
+        return fieldsets
+
+    def get_inlines(self, request, obj=None):
+        if obj and obj.is_numeric_input:
+            return []  # Скрываем варианты ответов для числовых вопросов
+        return [AnswerInline]
 
     verbose_name = 'Вопрос'
     verbose_name_plural = 'Вопросы'
 
+    class Media:
+        js = (
+            'admin/js/question_admin.js',
+        )
 
 @admin.register(AnonymousUserProfile)
 class AnonymousUserProfileAdmin(admin.ModelAdmin):

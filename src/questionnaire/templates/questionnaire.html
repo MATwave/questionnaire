@@ -29,60 +29,74 @@
         {% csrf_token %}
 
         <div class="mb-3">
-            {% if question.is_multiple_choice %}
-                <!-- Множественный выбор (оставляем как есть) -->
-                <p class="text-muted small mb-2">Выберите все подходящие варианты:</p>
-                {% for answer in question.answers.all %}
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox"
-                               name="answers"
-                               value="{{ answer.id }}"
-                               id="answer{{ answer.id }}"
-                               {% if answer in user_response.selected_answers.all %}checked{% endif %}>
-                        <label class="form-check-label" for="answer{{ answer.id }}">
-                            {{ answer.text }}
-                        </label>
-                    </div>
-                {% endfor %}
+            {% if question.is_numeric_input %}
+                <!-- Числовой ввод -->
+                <div class="numeric-input">
+                    <input type="number"
+                           name="numeric_answer"
+                           class="form-control"
+                           step="0.1"
+                           min="0"
+                           {% if question.is_required %}required{% endif %}
+                           value="{{ user_response.numeric_answer|default_if_none:'' }}">
+                    <div class="form-text">Пожалуйста, введите числовое значение</div>
+                </div>
             {% else %}
-                <!-- Одиночный выбор с возможностью свободного ответа -->
-                {% for answer in question.answers.all %}
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio"
-                               name="answers"
-                               value="{{ answer.id }}"
-                               id="answer{{ answer.id }}"
-                               {% if answer in user_response.selected_answers.all %}checked{% endif %}
-                               {% if question.is_required %}required{% endif %}>
-                        <label class="form-check-label" for="answer{{ answer.id }}">
-                            {{ answer.text }}
-                        </label>
-                    </div>
-                {% endfor %}
+                {% if question.is_multiple_choice %}
+                    <!-- Множественный выбор -->
+                    <p class="text-muted small mb-2">Выберите все подходящие варианты:</p>
+                    {% for answer in question.answers.all %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="answers"
+                                   value="{{ answer.id }}"
+                                   id="answer{{ answer.id }}"
+                                   {% if answer in user_response.selected_answers.all %}checked{% endif %}>
+                            <label class="form-check-label" for="answer{{ answer.id }}">
+                                {{ answer.text }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Одиночный выбор с возможностью свободного ответа -->
+                    {% for answer in question.answers.all %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio"
+                                   name="answers"
+                                   value="{{ answer.id }}"
+                                   id="answer{{ answer.id }}"
+                                   {% if answer in user_response.selected_answers.all %}checked{% endif %}
+                                   {% if question.is_required %}required{% endif %}>
+                            <label class="form-check-label" for="answer{{ answer.id }}">
+                                {{ answer.text }}
+                            </label>
+                        </div>
+                    {% endfor %}
 
-                <!-- Радиокнопка для свободного ответа -->
-                {% if question.allow_free_text %}
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio"
-                               name="answers"
-                               value="free_text"
-                               id="answer_free_text"
-                               {% if user_response.free_text_answer %}checked{% endif %}>
-                        <label class="form-check-label" for="answer_free_text">
-                            Другой вариант (укажите ниже)
-                        </label>
-                    </div>
+                    <!-- Радиокнопка для свободного ответа -->
+                    {% if question.allow_free_text %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio"
+                                   name="answers"
+                                   value="free_text"
+                                   id="answer_free_text"
+                                   {% if user_response.free_text_answer %}checked{% endif %}>
+                            <label class="form-check-label" for="answer_free_text">
+                                Другой вариант (укажите ниже)
+                            </label>
+                        </div>
 
-                    <!-- Поле для свободного ответа (изначально скрыто) -->
-                    <div class="mb-3 free-text-field" style="display: none;">
-                        <label for="free_text" class="form-label">Ваш вариант ответа:</label>
-                        <textarea id="free_text"
-                                  name="free_text"
-                                  class="form-control"
-                                  rows="3"
-                                  {% if question.is_required %}required{% endif %}
-                        >{{ user_response.free_text_answer|default:""|striptags }}</textarea>
-                    </div>
+                        <!-- Поле для свободного ответа -->
+                        <div class="mb-3 free-text-field" style="display: none;">
+                            <label for="free_text" class="form-label">Ваш вариант ответа:</label>
+                            <textarea id="free_text"
+                                      name="free_text"
+                                      class="form-control"
+                                      rows="3"
+                                      {% if question.is_required %}required{% endif %}
+                            >{{ user_response.free_text_answer|default:""|striptags }}</textarea>
+                        </div>
+                    {% endif %}
                 {% endif %}
             {% endif %}
         </div>
@@ -92,7 +106,7 @@
         {% endif %}
 
         <button type="submit" class="btn btn-primary w-100 mt-3">
-            {% if next_question %}Далее{% else %}Завершить опрос{% endif %}
+            {% if question.order < question_count %}Далее{% else %}Завершить опрос{% endif %}
         </button>
     </form>
 </div>
@@ -100,29 +114,30 @@
 <!-- Скрипт для управления видимостью текстового поля -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const freeTextRadio = document.getElementById('answer_free_text');
-    const freeTextField = document.querySelector('.free-text-field');
-    const textarea = document.getElementById('free_text');
+    // Только для вопросов с свободным ответом
+    {% if question.allow_free_text and not question.is_numeric_input %}
+        const freeTextRadio = document.getElementById('answer_free_text');
+        const freeTextField = document.querySelector('.free-text-field');
+        const textarea = document.getElementById('free_text');
 
-    function toggleFreeText() {
-        if (freeTextRadio && freeTextRadio.checked) {
-            freeTextField.style.display = 'block';
-            textarea.required = true;
-        } else if (freeTextField) {
-            freeTextField.style.display = 'none';
-            textarea.required = false;
+        function toggleFreeText() {
+            if (freeTextRadio && freeTextRadio.checked) {
+                freeTextField.style.display = 'block';
+                textarea.required = true;
+            } else if (freeTextField) {
+                freeTextField.style.display = 'none';
+                textarea.required = false;
+            }
         }
-    }
 
-    // Инициализация при загрузке
-    toggleFreeText();
+        // Инициализация при загрузке
+        toggleFreeText();
 
-    // Слушаем изменения всех радиокнопок
-    if (freeTextRadio) {
+        // Слушаем изменения всех радиокнопок
         document.querySelectorAll('input[name="answers"]').forEach(radio => {
             radio.addEventListener('change', toggleFreeText);
         });
-    }
+    {% endif %}
 });
 </script>
 

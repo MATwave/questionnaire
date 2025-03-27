@@ -35,6 +35,12 @@ class Question(models.Model):
         verbose_name='Множественный выбор'
     )
 
+    is_numeric_input = models.BooleanField(
+        default=False,
+        verbose_name='Числовой ответ',
+        help_text="Разрешить ввод числового значения вместо выбора ответов"
+    )
+
     class Meta:
         ordering = ['order']
         verbose_name = 'Вопрос'
@@ -44,10 +50,21 @@ class Question(models.Model):
         return self.text
 
     def clean(self):
+        super().clean()
+
         if self.allow_free_text and self.is_multiple_choice:
             raise ValidationError("Свободный ответ не может быть разрешен для вопросов с множественным выбором")
 
-        if self._state.adding:  # Только для новых объектов
+        if self.is_numeric_input:
+            if self.allow_free_text:
+                raise ValidationError("Числовой ответ несовместим со свободным текстом")
+            if self.is_multiple_choice:
+                raise ValidationError("Числовой ответ несовместим с множественным выбором")
+            # Проверяем только для существующих вопросов
+            if self.pk and self.answers.exists():
+                raise ValidationError("Числовой вопрос не должен иметь вариантов ответов")
+
+        if self._state.adding:
             if self.order == 0:
                 last_order = Question.objects.aggregate(models.Max('order'))['order__max'] or 0
                 self.order = last_order + 1
@@ -194,6 +211,12 @@ class UserResponse(models.Model):
     created_at = models.DateTimeField(
         default=now,
         verbose_name='Дата ответа'
+    )
+
+    numeric_answer = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Числовой ответ'
     )
 
     class Meta:
