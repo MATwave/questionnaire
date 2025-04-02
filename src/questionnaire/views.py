@@ -81,7 +81,7 @@ def questionnaire_view(request, question_order=None):
             # Валидация для обычных вопросов
             if has_free_text:
                 if len(selected_answers_ids) > 1:
-                    error = "Нельзя выбирать другие варианты вместе с 'Другой вариант'"
+                    error = "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
                 elif not question.allow_free_text:
                     error = "Свободный ответ не разрешен для этого вопроса"
                 elif not free_text_answer:
@@ -89,7 +89,7 @@ def questionnaire_view(request, question_order=None):
             else:
                 selected_answers = Answer.objects.filter(id__in=selected_answers_ids)
                 if free_text_answer:
-                    error = "Уберите текст или выберите 'Другой вариант'"
+                    error = "Уберите текст или выберите 'Свой вариант'"
 
             if question.is_required and not error:
                 if question.is_multiple_choice:

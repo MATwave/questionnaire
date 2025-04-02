@@ -37,7 +37,7 @@ def calculate_user_rating(user_profile):
         user_profile=user_profile
     ).prefetch_related(
         Prefetch('selected_answers', queryset=Answer.objects.only('value')),
-        'question'
+        Prefetch('question', queryset=Question.objects.only('description'))
     )
 
     # Если нет ни одного ответа
@@ -80,8 +80,14 @@ def calculate_user_rating(user_profile):
 
     # Расчет индекса курильщика
     if smoking_data['cigarettes'] > 0 and smoking_data['years'] > 0:
-        smoking_index = (smoking_data['cigarettes'] * smoking_data['years']) / 20  # Пример формулы
-        category_values['lifestyle'].append(min(smoking_index, 1.0))  # Нормализуем до 1.0
+        smoking_index = (smoking_data['cigarettes'] * smoking_data['years']) / 20
+        # Добавляем индекс курильщика как отдельный показатель
+        category_values['lifestyle'].append(min(smoking_index, 1.0))
+
+    # Нормализация значений для категории lifestyle
+    if category_values['lifestyle']:
+        # Ограничиваем максимальное значение до 1.0 для всех элементов
+        category_values['lifestyle'] = [min(val, 1.0) for val in category_values['lifestyle']]
 
     # Расчет средних значений
     def safe_avg(values):

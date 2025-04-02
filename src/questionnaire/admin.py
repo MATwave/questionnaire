@@ -22,9 +22,14 @@ def export_responses_csv(modeladmin, request, queryset):
     headers = [
         'Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)',
         *questions.values_list('text', flat=True),
-        'МБФ', 'ФАиРД', 'СТП', 'Образ жизни', 'Питание',
-        'Пищевое поведение', 'Продукты питания', 'Стресс',
-        'ИТОГО', 'Оценка соответствия'
+        'МБФ',
+        'СТП',
+        'Образ жизни и режим дня',  # Обновленная колонка
+        'Питание',
+        'Пищевое поведение',
+        'Стресс',
+        'ИТОГО',
+        'Оценка соответствия'
     ]
     writer.writerow(headers)
 
@@ -32,7 +37,10 @@ def export_responses_csv(modeladmin, request, queryset):
     user_profiles = AnonymousUserProfile.objects.filter(
         responses__isnull=False
     ).prefetch_related(
-        Prefetch('responses', queryset=UserResponse.objects.prefetch_related('selected_answers'))
+        Prefetch('responses', queryset=UserResponse.objects.prefetch_related(
+            Prefetch('selected_answers', queryset=Answer.objects.only('text')),
+            Prefetch('question', queryset=Question.objects.only('description', 'is_numeric_input'))
+        ))
     ).distinct()
 
     for profile in user_profiles:
@@ -46,7 +54,7 @@ def export_responses_csv(modeladmin, request, queryset):
         first_response = profile.responses.earliest('created_at')
         row = [
             first_response.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            profile.gender or '',
+            profile.get_gender_display() if profile.gender else '',
             profile.age or '',
             profile.height or '',
             profile.weight or '',
@@ -59,7 +67,7 @@ def export_responses_csv(modeladmin, request, queryset):
             response_obj = question_responses.get(q.id)
             if response_obj:
                 if q.is_numeric_input:
-                    answers = str(response_obj.numeric_answer)
+                    answers = str(response_obj.numeric_answer or '')
                 else:
                     answers = ", ".join(a.text for a in response_obj.selected_answers.all())
             else:
@@ -68,17 +76,16 @@ def export_responses_csv(modeladmin, request, queryset):
 
         row += answers_row
 
-        # Специальные колонки
+        # Обновленные специальные колонки
         special_columns = [
-            '', '',  # МБФ, ФАиРД
+            '',  # МБФ
             rating_data.get('work_assessment_avg', 0),  # СТП
-            '',  # Образ жизни
+            rating_data.get('lifestyle_avg', 0),  # Образ жизни
             rating_data.get('nutrition_avg', 0),  # Питание
             rating_data.get('eating_behavior_avg', 0),  # Пищевое поведение
-            '',  # Продукты питания
             rating_data.get('stress_avg', 0),  # Стресс
             rating_data.get('total_score', 0),  # ИТОГО
-            rating_data.get('rating', 'Нет оценки')  # Оценка соответствия
+            rating_data.get('rating', 'Нет оценки')  # Оценка
         ]
 
         writer.writerow(row + special_columns)
@@ -89,7 +96,7 @@ def export_responses_csv(modeladmin, request, queryset):
 class AnswerInline(nested_admin.NestedStackedInline):
     model = Answer
     extra = 0
-    fields = ['text', 'value', 'is_optional', 'next_question']
+    fields = ['text', 'value', 'next_question']
     fk_name = 'question'
     classes = ['collapse']
     verbose_name = 'Ответ'
@@ -98,7 +105,7 @@ class AnswerInline(nested_admin.NestedStackedInline):
 
 @admin.register(Question)
 class QuestionAdmin(nested_admin.NestedModelAdmin):
-    list_display = ['text', 'order', 'is_required']
+    list_display = ['text', 'order', 'description', 'allow_free_text', 'is_multiple_choice', 'is_numeric_input']
     list_display_links = ['text']
     list_editable = ['order']  # Разрешаем редактирование порядка
     inlines = [AnswerInline]
