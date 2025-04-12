@@ -11,14 +11,29 @@
         <div class="results-block mb-4">
             <h4 class="mb-3">Ваши результаты:</h4>
 
+            <!-- Общая оценка -->
             <div class="alert alert-primary">
                 <h5 class="mb-2">Общая оценка:</h5>
                 <div class="display-4 text-dark mb-2">{{ rating }}</div>
                 <p class="mb-0">Средний балл: {{ total_score|floatformat:2 }}</p>
             </div>
 
-            <!-- Рекомендации -->
-            <div class="mt-4">
+            <!-- Блок с ИМТ -->
+            <div class="alert alert-secondary mt-3">
+                <h5 class="mb-2">📊 Ваш ИМТ: <span class="badge bg-info">{{ bmi }}</span></h5>
+                <div class="risk-info">
+                    <p class="fw-bold mb-1">Категория: {{ bmi_category }}</p>
+                    <div class="alert alert-{% if 'Ожирение' in bmi_category %}danger
+                                           {% elif 'Недостаточность' in bmi_category %}warning
+                                           {% else %}success{% endif %} mt-2">
+                        <h6>Уровень риска: {{ bmi_risk_level }}</h6>
+                        <p class="mb-0 small">{{ bmi_risk_description }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Общие рекомендации -->
+            <div class="mt-3">
                 {% if rating == "Неудовлетворительная" %}
                 <div class="alert alert-danger">
                     <h5 class="mb-2">🚨 Рекомендации:</h5>
@@ -62,10 +77,10 @@
                 {% endif %}
             </div>
 
+            <!-- Детализация показателей -->
             <div class="mt-3 text-start">
                 <h5 class="mb-3">Детализация:</h5>
                 <ul class="list-group">
-                    <!-- Добавляем новую категорию -->
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         Стресс
                         <span class="badge bg-primary rounded-pill">{{ stress_avg|floatformat:2 }}</span>
@@ -120,6 +135,11 @@
 
     .alert li {
         margin: 0.3rem 0;
+    }
+
+    .alert-secondary {
+        background: #f8f9fa;
+        border-color: #dee2e6;
     }
 </style>
 {% endblock %}

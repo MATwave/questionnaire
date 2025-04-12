@@ -20,11 +20,11 @@ def export_responses_csv(modeladmin, request, queryset):
     questions = Question.objects.order_by('order')
 
     headers = [
-        'Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)',
+        'Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)', 'ИМТ',
         *questions.values_list('text', flat=True),
         'МБФ',
         'СТП',
-        'Образ жизни и режим дня',  # Обновленная колонка
+        'Образ жизни и режим дня',
         'Питание',
         'Пищевое поведение',
         'Стресс',
@@ -33,7 +33,6 @@ def export_responses_csv(modeladmin, request, queryset):
     ]
     writer.writerow(headers)
 
-    # Фильтруем только профили с ответами
     user_profiles = AnonymousUserProfile.objects.filter(
         responses__isnull=False
     ).prefetch_related(
@@ -44,23 +43,31 @@ def export_responses_csv(modeladmin, request, queryset):
     ).distinct()
 
     for profile in user_profiles:
-        # Пропускаем профили без ответов
         if not profile.responses.exists():
             continue
 
         rating_data = calculate_user_rating(profile)
-
-        # Основные данные
         first_response = profile.responses.earliest('created_at')
+
+        # Расчет ИМТ
+        bmi = ''
+        if profile.height and profile.weight:
+            try:
+                height_m = profile.height / 100
+                bmi_value = profile.weight / (height_m ** 2)
+                bmi = f"{bmi_value:.1f}"
+            except ZeroDivisionError:
+                bmi = 'Ошибка расчета'
+
         row = [
             first_response.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             profile.get_gender_display() if profile.gender else '',
             profile.age or '',
             profile.height or '',
             profile.weight or '',
+            bmi,  # Добавлен ИМТ
         ]
 
-        # Ответы на вопросы
         question_responses = {r.question_id: r for r in profile.responses.all()}
         answers_row = []
         for q in questions:
@@ -69,16 +76,19 @@ def export_responses_csv(modeladmin, request, queryset):
                 if q.is_numeric_input:
                     answers = str(response_obj.numeric_answer or '')
                 else:
-                    answers = ", ".join(a.text for a in response_obj.selected_answers.all())
+                    selected = [a.text for a in response_obj.selected_answers.all()]
+                    # Добавляем свободный текст, если он есть
+                    if response_obj.free_text_answer:
+                        selected.append(response_obj.free_text_answer)
+                    answers = ", ".join(selected) if selected else ""
             else:
                 answers = "Нет ответа"
             answers_row.append(answers)
 
         row += answers_row
 
-        # Обновленные специальные колонки
         special_columns = [
-            '',  # МБФ
+            rating_data.get('medico_biological_avg', 0),  # МБФ
             rating_data.get('work_assessment_avg', 0),  # СТП
             rating_data.get('lifestyle_avg', 0),  # Образ жизни
             rating_data.get('nutrition_avg', 0),  # Питание
