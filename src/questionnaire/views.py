@@ -83,8 +83,8 @@ def questionnaire_view(request, question_order=None):
                     numeric = float(numeric)
                     # Специфичная валидация для холестерина
                     if question.description == "ОБЩИЙ ХОЛЕСТЕРИН":
-                        if numeric < 2.0 or numeric > 15.0:
-                            error = "Проверьте корректность значения (допустимый диапазон: 2.0-15.0 ммоль/л)"
+                        if numeric and (float(numeric) < 2.0 or float(numeric) > 30.0):
+                            error = "Проверьте значение (допустимо 2.0-30.0 ммоль/л)"
                         else:
                             error = None
                     else:

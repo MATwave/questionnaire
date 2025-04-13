@@ -35,7 +35,8 @@ def get_question_categories():
                              "ОКРУЖНОСТЬ (ТАЛИИ)",
                              "ОКРУЖНОСТЬ (БЕДЕР)",
                              "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ",
-                             "ОБЩИЙ ХОЛЕСТЕРИН"],
+                             "ОБЩИЙ ХОЛЕСТЕРИН",
+                             "УРОВЕНЬ ГЛЮКОЗЫ"],
             'label': 'Медико-биологические факторы'
         }
 
@@ -56,7 +57,7 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data = process_responses(responses, bmi_data, user_profile)
+    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data = process_responses(responses, bmi_data, user_profile)
 
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
@@ -75,7 +76,8 @@ def calculate_user_rating(user_profile):
         diseases,
         waist_hip_data,
         bp_data,
-        cholesterol_data
+        cholesterol_data,
+        glucose_data
     )
 
     return result
@@ -275,6 +277,20 @@ def get_bp_description(bp_data):
     return descriptions[status]
 
 
+def get_glucose_status(value):
+    """Определение статуса глюкозы"""
+    if value is None or value == 0:
+        return 'unknown'
+
+    status = []
+    if value > 5.6:
+        status.append("превышение капиллярной нормы (>5.6 ммоль/л)")
+    if value > 6.1:
+        status.append("превышение венозной нормы (>6.1 ммоль/л)")
+
+    return ", ".join(status) if status else "норма"
+
+
 def process_responses(responses, bmi_data, user_profile):
     """Обработка ответов пользователя"""
     categories = get_question_categories()
@@ -284,6 +300,7 @@ def process_responses(responses, bmi_data, user_profile):
     waist_hip_data = {'waist': None, 'hip': None}
     bp_data = {'systolic': None, 'diastolic': None, 'unknown': False}
     cholesterol_data = {'value': None}
+    glucose_data = {'value': None, 'unknown': False}
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -308,6 +325,22 @@ def process_responses(responses, bmi_data, user_profile):
                 cholesterol_data['unknown'] = False
             else:
                 cholesterol_data['unknown'] = True
+        elif response.question.description == "УРОВЕНЬ ГЛЮКОЗЫ":
+            if response.numeric_answer is not None:
+                try:
+                    value = float(response.numeric_answer)
+                    # Если значение 0 - считаем неизвестным
+                    if value == 0.0:
+                        glucose_data['unknown'] = True
+                        glucose_data['value'] = None
+                    else:
+                        glucose_data['value'] = value
+                        glucose_data['unknown'] = False
+                except:
+                    glucose_data['unknown'] = True
+            else:
+                glucose_data['unknown'] = True
+
         elif response.question.description == "Имеющиеся заболевания":
             diseases.extend([a.text for a in response.selected_answers.all()])
             if response.free_text_answer:
@@ -392,7 +425,15 @@ def process_responses(responses, bmi_data, user_profile):
         # Нормальные значения не влияют на оценку
         category_values['medico_biological'].append(1.0)
 
-    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data
+    #7. глюкоза
+    if glucose_data['value'] and glucose_data['value'] > 6.1:
+        category_values['medico_biological'].append(0.0)
+    elif glucose_data['value'] and glucose_data['value'] > 5.6:
+        category_values['medico_biological'].append(0.5)
+    else:
+        category_values['medico_biological'].append(1.0)
+
+    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data
 
 
 def get_response_category(response, categories):
@@ -521,7 +562,7 @@ def get_ratio_status(profile, data):
 
     return {'status': status, 'description': description}
 
-def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data):
+def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -566,6 +607,12 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
         'cholesterol_value': cholesterol_data.get('value'),
         'cholesterol_status': 'high' if cholesterol_data.get('value', 0) > 5.5 else 'normal',
         'cholesterol_unknown': cholesterol_data['unknown']
+    })
+
+    result.update({
+        'glucose_value': glucose_data.get('value'),
+        'glucose_status': get_glucose_status(glucose_data.get('value')),
+        'glucose_unknown': glucose_data['unknown'] or glucose_data.get('value') is None or glucose_data.get('value') == 0
     })
 
     # Общие показатели

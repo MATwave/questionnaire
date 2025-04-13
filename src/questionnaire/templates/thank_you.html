@@ -142,6 +142,32 @@
                 </div>
             </div>
 
+            <!-- Блок с глюкозой -->
+            <div class="alert alert-info mt-3">
+                <h5 class="mb-3">🩸 Уровень глюкозы</h5>
+                <div class="mb-3">
+                    {% if glucose_unknown or glucose_value == 0 %}
+                        <div class="alert alert-warning">
+                            <strong>Рекомендация:</strong><br>
+                            Значение глюкозы не указано или равно 0. Необходимо сдать анализ:<br>
+                            - Капиллярная кровь: ≤5.6 ммоль/л<br>
+                            - Венозная кровь: ≤6.1 ммоль/л
+                        </div>
+                    {% else %}
+                        <h6>Показатель: {{ glucose_value|floatformat:1 }} ммоль/л</h6>
+                        <div class="alert
+                            {% if glucose_status == 'diabetes' %}alert-danger
+                            {% elif glucose_status == 'prediabetes' %}alert-warning
+                            {% else %}alert-success{% endif %}">
+                            <strong>Статус:</strong>
+                            {% if glucose_status == 'diabetes' %}Высокий риск диабета
+                            {% elif glucose_status == 'prediabetes' %}Предиабет
+                            {% else %}Норма{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Общие рекомендации -->
             <div class="mt-3">
                 {% if rating == "Неудовлетворительная" %}
