@@ -34,7 +34,8 @@ def get_question_categories():
                              "Имеющиеся заболевания",
                              "ОКРУЖНОСТЬ (ТАЛИИ)",
                              "ОКРУЖНОСТЬ (БЕДЕР)",
-                             "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ"],
+                             "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ",
+                             "ОБЩИЙ ХОЛЕСТЕРИН"],
             'label': 'Медико-биологические факторы'
         }
 
@@ -55,7 +56,7 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data, diseases, waist_hip_data, bp_data = process_responses(responses, bmi_data, user_profile)
+    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data = process_responses(responses, bmi_data, user_profile)
 
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
@@ -73,7 +74,8 @@ def calculate_user_rating(user_profile):
         smoking_data,
         diseases,
         waist_hip_data,
-        bp_data
+        bp_data,
+        cholesterol_data
     )
 
     return result
@@ -281,6 +283,7 @@ def process_responses(responses, bmi_data, user_profile):
     diseases = []
     waist_hip_data = {'waist': None, 'hip': None}
     bp_data = {'systolic': None, 'diastolic': None, 'unknown': False}
+    cholesterol_data = {'value': None}
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -299,6 +302,12 @@ def process_responses(responses, bmi_data, user_profile):
             waist_hip_data['waist'] = response.numeric_answer if response.numeric_answer else None
         elif response.question.description == "ОКРУЖНОСТЬ (БЕДЕР)":
             waist_hip_data['hip'] = response.numeric_answer if response.numeric_answer else None
+        elif response.question.description == "ОБЩИЙ ХОЛЕСТЕРИН":
+            if response.numeric_answer is not None:
+                cholesterol_data['value'] = float(response.numeric_answer)
+                cholesterol_data['unknown'] = False
+            else:
+                cholesterol_data['unknown'] = True
         elif response.question.description == "Имеющиеся заболевания":
             diseases.extend([a.text for a in response.selected_answers.all()])
             if response.free_text_answer:
@@ -359,6 +368,9 @@ def process_responses(responses, bmi_data, user_profile):
             elif user_profile.gender == 'F' and ratio >= 0.85:
                 ratio_status = 0
 
+    # Добавляем в категорию
+    category_values['medico_biological'].extend([waist_status, ratio_status])
+
     # 5. Расчет показателей артериального давления
     bp_status = get_bp_status(bp_data)  # Получаем статус давления
     bp_score = 0.0
@@ -373,7 +385,14 @@ def process_responses(responses, bmi_data, user_profile):
     # Добавляем балл давления в категорию
     category_values['medico_biological'].append(bp_score)
 
-    return category_values, smoking_data, diseases, waist_hip_data, bp_data
+    # 6. Общий холестерин
+    if cholesterol_data['value'] and cholesterol_data['value'] > 5.5:
+        category_values['medico_biological'].append(0.0)
+    elif not cholesterol_data['unknown']:
+        # Нормальные значения не влияют на оценку
+        category_values['medico_biological'].append(1.0)
+
+    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data
 
 
 def get_response_category(response, categories):
@@ -502,7 +521,7 @@ def get_ratio_status(profile, data):
 
     return {'status': status, 'description': description}
 
-def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data):
+def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -541,6 +560,12 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
         'bp_data': bp_data,
         'bp_status': get_bp_status(bp_data),
         'bp_description': get_bp_description(bp_data)
+    })
+
+    result.update({
+        'cholesterol_value': cholesterol_data.get('value'),
+        'cholesterol_status': 'high' if cholesterol_data.get('value', 0) > 5.5 else 'normal',
+        'cholesterol_unknown': cholesterol_data['unknown']
     })
 
     # Общие показатели

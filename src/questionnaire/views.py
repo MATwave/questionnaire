@@ -76,11 +76,20 @@ def questionnaire_view(request, question_order=None):
         # Validation logic
         if question.is_numeric_input:
             if not numeric:
-                error = "Введите числовое значение"
+                if question.is_required:
+                    error = "Введите числовое значение"
             else:
                 try:
                     numeric = float(numeric)
-                    error = "Значение не может быть отрицательным" if numeric < 0 else None
+                    # Специфичная валидация для холестерина
+                    if question.description == "ОБЩИЙ ХОЛЕСТЕРИН":
+                        if numeric < 2.0 or numeric > 15.0:
+                            error = "Проверьте корректность значения (допустимый диапазон: 2.0-15.0 ммоль/л)"
+                        else:
+                            error = None
+                    else:
+                        # Общая валидация для других числовых вопросов
+                        error = "Значение не может быть отрицательным" if numeric < 0 else None
                 except ValueError:
                     error = "Введите корректное число"
         else:
