@@ -31,6 +31,20 @@
                     </div>
                 </div>
             </div>
+            <!-- Блок с заболеваниями -->
+            {% if existing_diseases %}
+            <div class="alert alert-warning mt-3">
+                <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
+                <ul class="list-unstyled">
+                    {% for disease in existing_diseases %}
+                        <li>
+                            <i class="bi bi-arrow-right-short text-danger"></i>
+                            {{ disease }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
 
             <!-- Общие рекомендации -->
             <div class="mt-3">
@@ -81,6 +95,10 @@
             <div class="mt-3 text-start">
                 <h5 class="mb-3">Детализация:</h5>
                 <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Медико-биологические факторы
+                        <span class="badge bg-primary rounded-pill">{{ medico_biological_avg|floatformat:2 }}</span>
+                    </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         Стресс
                         <span class="badge bg-primary rounded-pill">{{ stress_avg|floatformat:2 }}</span>

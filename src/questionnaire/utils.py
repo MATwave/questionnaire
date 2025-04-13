@@ -29,8 +29,9 @@ def get_question_categories():
             ],
             'label': 'Образ жизни и ФАиРД'
         },
-        'medico_biological': {
-            'descriptions': ["МЕДИКО-БИОЛОГИЧЕСКИЕ ФАКТОРЫ"],
+            'medico_biological': {
+            'descriptions': ["МЕДИКО-БИОЛОГИЧЕСКИЕ ФАКТОРЫ",
+                             "Имеющиеся заболевания"],
             'label': 'Медико-биологические факторы'
         }
 
@@ -51,7 +52,7 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data = process_responses(responses, bmi_data)
+    category_values, smoking_data, diseases = process_responses(responses, bmi_data)
 
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
@@ -65,7 +66,8 @@ def calculate_user_rating(user_profile):
         bmi_data,
         category_averages,
         total_score,
-        smoking_data
+        smoking_data,
+        diseases
     )
 
     return result
@@ -243,6 +245,7 @@ def process_responses(responses, bmi_data):
     categories = get_question_categories()
     category_values = {key: [] for key in categories}
     smoking_data = {'cigarettes': 0, 'years': 0}
+    diseases = []
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -251,6 +254,11 @@ def process_responses(responses, bmi_data):
             continue
 
         values = get_answer_values(response)
+
+        if response.question.description == "Имеющиеся заболевания":
+            diseases.extend([a.text for a in response.selected_answers.all()])
+            if response.free_text_answer:
+                diseases.append(response.free_text_answer)
 
         if category == 'lifestyle':
             handle_lifestyle_response(response, values, smoking_data, category_values)
@@ -266,7 +274,7 @@ def process_responses(responses, bmi_data):
     medico_bio_value = 1.0 if bmi_data.get('category') == 'Нормальный ИМТ' else 0.0
     category_values.setdefault('medico_biological', []).append(medico_bio_value)
 
-    return category_values, smoking_data
+    return category_values, smoking_data, diseases
 
 
 def get_response_category(response, categories):
@@ -294,14 +302,13 @@ def handle_lifestyle_response(response, values, smoking_data, category_values):
 
 
 def calculate_category_averages(category_values):
-    """Расчет средних с учетом medico_biological"""
+    """Расчет средних"""
     averages = {}
     for category, values in category_values.items():
         # Для lifestyle применяем нормализацию
         if category == 'lifestyle':
             values = [min(val, 1.0) for val in values]
 
-        # Для medico_biological учитываем ИМТ
         avg = safe_average(values) if values else 0.0
         averages[f'{category}_avg'] = avg
 
@@ -335,7 +342,7 @@ def determine_rating(total_score):
     return "Оптимальная"
 
 
-def update_result(result, bmi_data, category_averages, total_score, smoking_data):
+def update_result(result, bmi_data, category_averages, total_score, smoking_data, diseases):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -345,7 +352,8 @@ def update_result(result, bmi_data, category_averages, total_score, smoking_data
         'bmi': bmi_data.get('value', 'Нет данных'),
         'bmi_category': bmi_data.get('category', 'Не рассчитан'),
         'bmi_risk_level': bmi_data.get('risk_level', 'Не определен'),
-        'bmi_risk_description': bmi_data.get('risk_description', 'Данные отсутствуют')
+        'bmi_risk_description': bmi_data.get('risk_description', 'Данные отсутствуют'),
+        'existing_diseases': diseases if diseases else None
     })
 
     # Общие показатели
