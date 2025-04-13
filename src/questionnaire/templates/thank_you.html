@@ -31,8 +31,45 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Блок с талией/бедрами -->
+            <div class="alert alert-info mt-3">
+                <h5 class="mb-3">📏 Антропометрические показатели</h5>
+
+                <!-- Окружность талии -->
+                <div class="mb-3">
+                    <h6>Окружность талии: {{ waist|default:"не указана" }} см</h6>
+                    {% if waist_status %}
+                        <div class="alert alert-{% if waist_status == 'Норма' %}success{% else %}warning{% endif %}">
+                            <strong>Статус:</strong> {{ waist_status }}<br>
+                            {{ waist_description }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Соотношение талия/бедро -->
+                <div class="mb-3">
+                    <h6>Соотношение талия/бедро:
+                        {% if waist_hip_ratio %}
+                            {{ waist_hip_ratio|floatformat:2 }}
+                            <small class="text-muted">
+                                (Талия: {{ waist|floatformat }} см / Бедра: {{ hip|floatformat }} см)
+                            </small>
+                        {% else %}
+                            не рассчитано
+                        {% endif %}
+                    </h6>
+                    {% if ratio_status %}
+                        <div class="alert alert-{% if ratio_status == 'Норма' %}success{% else %}warning{% endif %}">
+                            <strong>Статус:</strong> {{ ratio_status }}<br>
+                            {{ ratio_description }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Блок с заболеваниями -->
-            {% if existing_diseases %}
+            {% if existing_diseases != 'Нет' %}
             <div class="alert alert-warning mt-3">
                 <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
                 <ul class="list-unstyled">

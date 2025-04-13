@@ -31,7 +31,10 @@ def get_question_categories():
         },
             'medico_biological': {
             'descriptions': ["МЕДИКО-БИОЛОГИЧЕСКИЕ ФАКТОРЫ",
-                             "Имеющиеся заболевания"],
+                             "Имеющиеся заболевания",
+                             "ОКРУЖНОСТЬ (ТАЛИИ)",
+                             "ОКРУЖНОСТЬ (БЕДЕР)",
+                             "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ"],
             'label': 'Медико-биологические факторы'
         }
 
@@ -52,7 +55,7 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data, diseases = process_responses(responses, bmi_data)
+    category_values, smoking_data, diseases, waist_hip_data = process_responses(responses, bmi_data, user_profile)
 
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
@@ -62,13 +65,17 @@ def calculate_user_rating(user_profile):
 
     # Обновление результата
     update_result(
+        user_profile,
         result,
         bmi_data,
         category_averages,
         total_score,
         smoking_data,
-        diseases
+        diseases,
+        waist_hip_data
     )
+
+    print(diseases)
 
     return result
 
@@ -240,12 +247,13 @@ def get_bmi_categories():
     ]
 
 
-def process_responses(responses, bmi_data):
+def process_responses(responses, bmi_data, user_profile):
     """Обработка ответов пользователя"""
     categories = get_question_categories()
     category_values = {key: [] for key in categories}
     smoking_data = {'cigarettes': 0, 'years': 0}
     diseases = []
+    waist_hip_data = {'waist': None, 'hip': None}
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -253,7 +261,18 @@ def process_responses(responses, bmi_data):
         if not category:
             continue
 
-        values = get_answer_values(response)
+        # Для числовых вопросов используем numeric_answer
+        if response.question.is_numeric_input:
+            values = [response.numeric_answer] if response.numeric_answer is not None else []
+        else:
+            values = get_answer_values(response)
+
+        # Сбор данных для талии/бедер
+        desc = response.question.description
+        if desc == "ОКРУЖНОСТЬ (ТАЛИИ)":
+            waist_hip_data['waist'] = response.numeric_answer if response.numeric_answer else None
+        elif desc == "ОКРУЖНОСТЬ (БЕДЕР)":
+            waist_hip_data['hip'] = response.numeric_answer if response.numeric_answer else None
 
         if response.question.description == "Имеющиеся заболевания":
             diseases.extend([a.text for a in response.selected_answers.all()])
@@ -274,7 +293,36 @@ def process_responses(responses, bmi_data):
     medico_bio_value = 1.0 if bmi_data.get('category') == 'Нормальный ИМТ' else 0.0
     category_values.setdefault('medico_biological', []).append(medico_bio_value)
 
-    return category_values, smoking_data, diseases
+    # 4. Расчет показателей талии/бедер
+
+    waist_status = 1
+    ratio_status = 1
+
+    if waist_hip_data['waist'] and user_profile.gender:
+        # Проверка для талии
+        if user_profile.gender == 'M':
+            if waist_hip_data['waist'] > 102:
+                waist_status = 0
+            elif waist_hip_data['waist'] > 94:
+                waist_status = 0
+        else:  # Female
+            if waist_hip_data['waist'] > 88:
+                waist_status = 0
+            elif waist_hip_data['waist'] > 80:
+                waist_status = 0
+
+        # Расчет соотношения
+        if waist_hip_data['hip'] and waist_hip_data['hip'] > 0:
+            ratio = waist_hip_data['waist'] / waist_hip_data['hip']
+            if user_profile.gender == 'M' and ratio >= 0.9:
+                ratio_status = 0
+            elif user_profile.gender == 'F' and ratio >= 0.85:
+                ratio_status = 0
+
+    # Добавляем в категорию
+    category_values['medico_biological'].extend([waist_status, ratio_status])
+
+    return category_values, smoking_data, diseases, waist_hip_data
 
 
 def get_response_category(response, categories):
@@ -342,7 +390,68 @@ def determine_rating(total_score):
     return "Оптимальная"
 
 
-def update_result(result, bmi_data, category_averages, total_score, smoking_data, diseases):
+def get_waist_status(profile, waist):
+    if not waist or not profile.gender:
+        return None
+
+    gender = profile.gender
+    status = 'Норма'
+    description = 'Риск сопутствующих заболеваний снижен'
+
+    if gender == 'M':
+        if waist >= 102:
+            status = 'Высокое значение'
+            description = (
+                "У вас наблюдается высокий риск развития метаболических нарушений, "
+                "ассоциированных с избыточной массой тела и ожирением, - сахарного диабета "
+                "2-ого типа и сердечно-сосудистых заболеваний"
+            )
+        elif waist >= 94:
+            status = 'Повышенное значение'
+            description = (
+                "У вас повышен риск развития метаболических нарушений, "
+                "ассоциированных с избыточной массой тела и ожирением, - сахарного диабета "
+                "2-ого типа и сердечно-сосудистых заболеваний"
+            )
+    else:
+        if waist >= 88:
+            status = 'Высокое значение'
+            description = (
+                "У вас наблюдается высокий риск развития метаболических нарушений, "
+                "ассоциированных с избыточной массой тела и ожирением, - сахарного диабета "
+                "2-ого типа и сердечно-сосудистых заболеваний"
+            )
+        elif waist >= 80:
+            status = 'Повышенное значение'
+            description = (
+                "У вас повышен риск развития метаболических нарушений, "
+                "ассоциированных с избыточной массой тела и ожирением, - сахарного диабета "
+                "2-ого типа и сердечно-сосудистых заболеваний"
+            )
+
+    return {'status': status, 'description': description}
+
+
+def get_ratio_status(profile, data):
+    if not data.get('waist') or not data.get('hip') or not profile.gender:
+        return None
+
+    ratio = data['waist'] / data['hip']
+    gender = profile.gender
+    status = 'Норма'
+    description = 'Риск сопутствующих заболеваний снижен'
+
+    if (gender == 'M' and ratio >= 0.9) or (gender == 'F' and ratio >= 0.85):
+        status = 'Повышенное значение'
+        description = (
+            "У вас наблюдается высокий риск развития метаболических нарушений, "
+            "ассоциированных с избыточной массой тела и ожирением, - сахарного диабета "
+            "2-ого типа и сердечно-сосудистых заболеваний"
+        )
+
+    return {'status': status, 'description': description}
+
+def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -354,6 +463,27 @@ def update_result(result, bmi_data, category_averages, total_score, smoking_data
         'bmi_risk_level': bmi_data.get('risk_level', 'Не определен'),
         'bmi_risk_description': bmi_data.get('risk_description', 'Данные отсутствуют'),
         'existing_diseases': diseases if diseases else None
+    })
+
+    # Добавляем расчет соотношения талия/бедро
+    waist = waist_hip_data.get('waist')
+    hip = waist_hip_data.get('hip')
+    ratio = None
+    if waist and hip and hip > 0:
+        ratio = waist / hip
+
+    # Обновляем данные для талии
+    waist_status_info = get_waist_status(user_profile, waist)
+    ratio_status_info = get_ratio_status(user_profile, waist_hip_data)
+
+    result.update({
+        'waist': waist,
+        'hip': hip,
+        'waist_hip_ratio': ratio,
+        'waist_status': waist_status_info.get('status') if waist_status_info else None,
+        'waist_description': waist_status_info.get('description') if waist_status_info else None,
+        'ratio_status': ratio_status_info.get('status') if ratio_status_info else None,
+        'ratio_description': ratio_status_info.get('description') if ratio_status_info else None
     })
 
     # Общие показатели
