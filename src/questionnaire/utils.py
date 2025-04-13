@@ -55,7 +55,7 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data, diseases, waist_hip_data = process_responses(responses, bmi_data, user_profile)
+    category_values, smoking_data, diseases, waist_hip_data, bp_data = process_responses(responses, bmi_data, user_profile)
 
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
@@ -72,10 +72,9 @@ def calculate_user_rating(user_profile):
         total_score,
         smoking_data,
         diseases,
-        waist_hip_data
+        waist_hip_data,
+        bp_data
     )
-
-    print(diseases)
 
     return result
 
@@ -247,6 +246,33 @@ def get_bmi_categories():
     ]
 
 
+def get_bp_status(bp_data):
+    if bp_data['unknown'] or not bp_data['systolic'] or not bp_data['diastolic']:
+        return 'unknown'
+
+    systolic = bp_data['systolic']
+    diastolic = bp_data['diastolic']
+
+    if systolic >= 140 or diastolic >= 90:
+        return 'high'
+    elif systolic >= 130 or diastolic >= 85:
+        return 'elevated'
+    else:
+        return 'normal'
+
+
+def get_bp_description(bp_data):
+    status = get_bp_status(bp_data)
+
+    descriptions = {
+        'normal': "У Вас нормальное артериальное давление",
+        'elevated': "У Вас нормальное повышенное АД",
+        'high': "У Вас высокое артериальное давление, необходима консультация специалиста (терапевта, кардиолога)",
+        'unknown': "Если Вам неизвестны значения Вашего артериального давления, то необходимо провести измерение. При значениях систолического давления выше 140 мм рт.ст и диастолического выше 90 мм рт.ст можно говорить о повышенном артериальном давлении. Необходима консультация специалиста (кардиолога, терапевта)"
+    }
+    return descriptions[status]
+
+
 def process_responses(responses, bmi_data, user_profile):
     """Обработка ответов пользователя"""
     categories = get_question_categories()
@@ -254,6 +280,7 @@ def process_responses(responses, bmi_data, user_profile):
     smoking_data = {'cigarettes': 0, 'years': 0}
     diseases = []
     waist_hip_data = {'waist': None, 'hip': None}
+    bp_data = {'systolic': None, 'diastolic': None, 'unknown': False}
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -268,16 +295,29 @@ def process_responses(responses, bmi_data, user_profile):
             values = get_answer_values(response)
 
         # Сбор данных для талии/бедер
-        desc = response.question.description
-        if desc == "ОКРУЖНОСТЬ (ТАЛИИ)":
+        if response.question.description == "ОКРУЖНОСТЬ (ТАЛИИ)":
             waist_hip_data['waist'] = response.numeric_answer if response.numeric_answer else None
-        elif desc == "ОКРУЖНОСТЬ (БЕДЕР)":
+        elif response.question.description == "ОКРУЖНОСТЬ (БЕДЕР)":
             waist_hip_data['hip'] = response.numeric_answer if response.numeric_answer else None
-
-        if response.question.description == "Имеющиеся заболевания":
+        elif response.question.description == "Имеющиеся заболевания":
             diseases.extend([a.text for a in response.selected_answers.all()])
             if response.free_text_answer:
                 diseases.append(response.free_text_answer)
+        if response.question.description == "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ":
+            if response.free_text_answer:
+                if '/' in response.free_text_answer:
+                    try:
+                        systolic, diastolic = map(int, response.free_text_answer.split('/'))
+                        bp_data.update({
+                            'systolic': systolic,
+                            'diastolic': diastolic,
+                            'unknown': False
+                        })
+                    except:
+                        bp_data['unknown'] = True
+                else:
+                    bp_data['unknown'] = True
+
 
         if category == 'lifestyle':
             handle_lifestyle_response(response, values, smoking_data, category_values)
@@ -319,10 +359,21 @@ def process_responses(responses, bmi_data, user_profile):
             elif user_profile.gender == 'F' and ratio >= 0.85:
                 ratio_status = 0
 
-    # Добавляем в категорию
-    category_values['medico_biological'].extend([waist_status, ratio_status])
+    # 5. Расчет показателей артериального давления
+    bp_status = get_bp_status(bp_data)  # Получаем статус давления
+    bp_score = 0.0
 
-    return category_values, smoking_data, diseases, waist_hip_data
+    if bp_status == 'high':
+        bp_score = 0.0
+    elif bp_status == 'elevated':
+        bp_score = 0.5
+    elif bp_status == 'normal':
+        bp_score = 1.0
+
+    # Добавляем балл давления в категорию
+    category_values['medico_biological'].append(bp_score)
+
+    return category_values, smoking_data, diseases, waist_hip_data, bp_data
 
 
 def get_response_category(response, categories):
@@ -451,7 +502,7 @@ def get_ratio_status(profile, data):
 
     return {'status': status, 'description': description}
 
-def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data):
+def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -484,6 +535,12 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
         'waist_description': waist_status_info.get('description') if waist_status_info else None,
         'ratio_status': ratio_status_info.get('status') if ratio_status_info else None,
         'ratio_description': ratio_status_info.get('description') if ratio_status_info else None
+    })
+
+    result.update({
+        'bp_data': bp_data,
+        'bp_status': get_bp_status(bp_data),
+        'bp_description': get_bp_description(bp_data)
     })
 
     # Общие показатели

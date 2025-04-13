@@ -32,6 +32,21 @@
                 </div>
             </div>
 
+                        <!-- Блок с заболеваниями -->
+            {% if existing_diseases != 'Нет' %}
+            <div class="alert alert-warning mt-3">
+                <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
+                <ul class="list-unstyled">
+                    {% for disease in existing_diseases %}
+                        <li>
+                            <i class="bi bi-arrow-right-short text-danger"></i>
+                            {{ disease }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <!-- Блок с талией/бедрами -->
             <div class="alert alert-info mt-3">
                 <h5 class="mb-3">📏 Антропометрические показатели</h5>
@@ -68,20 +83,29 @@
                 </div>
             </div>
 
-            <!-- Блок с заболеваниями -->
-            {% if existing_diseases != 'Нет' %}
-            <div class="alert alert-warning mt-3">
-                <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
-                <ul class="list-unstyled">
-                    {% for disease in existing_diseases %}
-                        <li>
-                            <i class="bi bi-arrow-right-short text-danger"></i>
-                            {{ disease }}
-                        </li>
-                    {% endfor %}
-                </ul>
+            <!-- Блок с артериальным давлением -->
+            <div class="alert alert-info mt-3">
+                <h5 class="mb-3">❤️ Артериальное давление</h5>
+
+                <div class="mb-3">
+                    {% if bp_status == 'unknown' %}
+                        <div class="alert alert-warning">
+                            {{ bp_description }}
+                        </div>
+                    {% else %}
+                        <h6>
+                            Показатели: {{ bp_data.systolic }}/{{ bp_data.diastolic }} мм рт.ст.
+                        </h6>
+                        <div class="alert alert-{% if bp_status == 'high' %}danger{% elif bp_status == 'elevated' %}warning{% else %}success{% endif %}">
+                            <strong>Статус:</strong>
+                            {% if bp_status == 'high' %}Высокое
+                            {% elif bp_status == 'elevated' %}Повышенное
+                            {% else %}Нормальное{% endif %}<br>
+                            {{ bp_description }}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            {% endif %}
 
             <!-- Общие рекомендации -->
             <div class="mt-3">

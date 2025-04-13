@@ -1,3 +1,5 @@
+import re
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.http import HttpResponseRedirect
@@ -69,7 +71,7 @@ def questionnaire_view(request, question_order=None):
         free_text = request.POST.get('free_text', '').strip() if question.allow_free_text else ""
         numeric = request.POST.get('numeric_answer', '').strip() if question.is_numeric_input else None
         selected_answers = Answer.objects.none()
-        has_free_text = 'free_text' in selected_ids
+        has_free_text = question.allow_free_text and bool(free_text)
 
         # Validation logic
         if question.is_numeric_input:
@@ -82,23 +84,45 @@ def questionnaire_view(request, question_order=None):
                 except ValueError:
                     error = "Введите корректное число"
         else:
-            if has_free_text:
-                if len(selected_ids) > 1:
-                    error = "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
-                elif not question.allow_free_text or not free_text:
-                    error = "Укажите ваш вариант ответа" if not free_text else "Свободный ответ не разрешен"
-            else:
-                selected_answers = Answer.objects.filter(id__in=selected_ids)
-                if free_text:
-                    error = "Уберите текст или выберите 'Свой вариант'"
+            # Новая логика валидации для артериального давления
+            if question.description == "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ":
+                if has_free_text:
+                    if free_text.lower() in ['не знаю', 'неизвестно']:
+                        # Корректная обработка "не знаю"
+                        pass
+                    else:
+                        # Проверка формата
+                        if not re.match(r'^\d+/\d+$', free_text):
+                            error = "Введите давление в формате ЧИСЛО/ЧИСЛО (например: 120/80) или введите 'не знаю'"
+                        else:
+                            try:
+                                systolic, diastolic = map(int, free_text.split('/'))
+                                if not (50 <= systolic <= 250) or not (30 <= diastolic <= 150):
+                                    error = "Проверьте корректность значений (допустимый диапазон: 50-250/30-150)"
+                            except ValueError:
+                                error = "Некорректные значения давления"
+                elif question.is_required:
+                    error = "Введите значение артериального давления или укажите 'не знаю'"
 
-            # Required field check
-            if question.is_required and not error:
-                min_answers = 1 if question.is_multiple_choice else 0
-                if not selected_answers.exists() and not (has_free_text and free_text):
-                    error = "Выберите вариант" + (" или заполните поле" if question.allow_free_text else "")
-                elif not question.is_multiple_choice and len(selected_ids) > 1:
-                    error = "Выберите только один вариант"
+            # Общая валидация для остальных вопросов
+            else:
+                if has_free_text:
+                    if len(selected_ids) > 1:
+                        error = "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
+                    elif not question.allow_free_text or not free_text:
+                        error = "Укажите ваш вариант ответа" if not free_text else "Свободный ответ не разрешен"
+                else:
+                    selected_answers = Answer.objects.filter(id__in=selected_ids)
+                    if free_text:
+                        error = "Уберите текст или выберите 'Свой вариант'"
+
+                # Required field check
+                if question.is_required and not error:
+                    min_answers = 1 if question.is_multiple_choice else 0
+                    if not selected_answers.exists() and not (has_free_text and free_text):
+                        error = "Выберите вариант" + (" или заполните поле" if question.allow_free_text else "")
+                    elif not question.is_multiple_choice and len(selected_ids) > 1:
+                        error = "Выберите только один вариант"
 
         # Handle validation errors
         if error:

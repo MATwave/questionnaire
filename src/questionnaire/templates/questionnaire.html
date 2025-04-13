@@ -39,7 +39,7 @@
                            min="0"
                            {% if question.is_required %}required{% endif %}
                            value="{{ user_response.numeric_answer|default_if_none:'' }}">
-                    <div class="form-text">Пожалуйста, введите числовое значение</div>
+                    <div class="form-text">Пожалуйста, введите числовое значение. Если не знаете - введите 0</div>
                 </div>
             {% else %}
                 {% if question.is_multiple_choice %}
@@ -82,7 +82,7 @@
                                    id="answer_free_text"
                                    {% if user_response.free_text_answer %}checked{% endif %}>
                             <label class="form-check-label" for="answer_free_text">
-                                Свой вариант (укажите ниже)
+                                Свой вариант
                             </label>
                         </div>
 
