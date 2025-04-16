@@ -106,7 +106,7 @@ def export_responses_csv(modeladmin, request, queryset):
 class AnswerInline(nested_admin.NestedStackedInline):
     model = Answer
     extra = 0
-    fields = ['text', 'value', 'next_question']
+    fields = ['text', 'recommendation', 'value', 'next_question']
     fk_name = 'question'
     classes = ['collapse']
     verbose_name = 'Ответ'
