@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from .models import Question, UserResponse, Answer
 
+# TODO: сейчас это все рассчитывается по всем, хотя можно по пользователю, что снизит нагрузку
 
 def get_question_categories():
     """Конфигурация категорий вопросов"""
@@ -22,7 +23,7 @@ def get_question_categories():
             'label': 'Самооценка труда'
         },
         'lifestyle': {
-            'descriptions': [
+            'descriptions': ["ДВИГАТЕЛЬНАЯ АКТИВНОСТЬ",
                 "ОБРАЗ ЖИЗНИ И РЕЖИМ ДНЯ",
                 "Курение (сигарет в день)",
                 "Курение (лет стажа)"
@@ -57,7 +58,7 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data = process_responses(responses, bmi_data, user_profile)
+    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity  = process_responses(responses, bmi_data, user_profile)
 
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
@@ -77,7 +78,8 @@ def calculate_user_rating(user_profile):
         waist_hip_data,
         bp_data,
         cholesterol_data,
-        glucose_data
+        glucose_data,
+        has_low_activity
     )
 
     return result
@@ -301,6 +303,7 @@ def process_responses(responses, bmi_data, user_profile):
     bp_data = {'systolic': None, 'diastolic': None, 'unknown': False}
     cholesterol_data = {'value': None}
     glucose_data = {'value': None, 'unknown': False}
+    physical_activity_values = []
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -340,12 +343,11 @@ def process_responses(responses, bmi_data, user_profile):
                     glucose_data['unknown'] = True
             else:
                 glucose_data['unknown'] = True
-
         elif response.question.description == "Имеющиеся заболевания":
             diseases.extend([a.text for a in response.selected_answers.all()])
             if response.free_text_answer:
                 diseases.append(response.free_text_answer)
-        if response.question.description == "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ":
+        elif response.question.description == "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ":
             if response.free_text_answer:
                 if '/' in response.free_text_answer:
                     try:
@@ -359,7 +361,8 @@ def process_responses(responses, bmi_data, user_profile):
                         bp_data['unknown'] = True
                 else:
                     bp_data['unknown'] = True
-
+        elif response.question.description == "ДВИГАТЕЛЬНАЯ АКТИВНОСТЬ":
+            physical_activity_values.extend(values)
 
         if category == 'lifestyle':
             handle_lifestyle_response(response, values, smoking_data, category_values)
@@ -433,7 +436,10 @@ def process_responses(responses, bmi_data, user_profile):
     else:
         category_values['medico_biological'].append(1.0)
 
-    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data
+    # двигательная активность
+    has_low_activity = any(v in (0, 0.5) for v in physical_activity_values)
+
+    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity
 
 
 def get_response_category(response, categories):
@@ -562,7 +568,7 @@ def get_ratio_status(profile, data):
 
     return {'status': status, 'description': description}
 
-def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data):
+def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, physical_activity_data):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -613,6 +619,10 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
         'glucose_value': glucose_data.get('value'),
         'glucose_status': get_glucose_status(glucose_data.get('value')),
         'glucose_unknown': glucose_data['unknown'] or glucose_data.get('value') is None or glucose_data.get('value') == 0
+    })
+
+    result.update({
+        'physical_activity_alert': physical_activity_data,
     })
 
     # Общие показатели
