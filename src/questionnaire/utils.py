@@ -26,6 +26,7 @@ def get_question_categories():
             'descriptions': ["ДВИГАТЕЛЬНАЯ АКТИВНОСТЬ",
                              "СОН",
                              "ЦИФРОВАЯ ГИГИЕНА",
+                             "ОТПУСК",
                 "ОБРАЗ ЖИЗНИ И РЕЖИМ ДНЯ",
                 "Курение (сигарет в день)",
                 "Курение (лет стажа)"
@@ -60,7 +61,7 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity, has_sleep_issues, has_digital_issues  = process_responses(responses, bmi_data, user_profile)
+    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity, has_sleep_issues, has_digital_issues, has_vacation_answers  = process_responses(responses, bmi_data, user_profile)
 
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
@@ -83,7 +84,8 @@ def calculate_user_rating(user_profile):
         glucose_data,
         has_low_activity,
         has_sleep_issues,
-        has_digital_issues
+        has_digital_issues,
+        has_vacation_answers
     )
 
     return result
@@ -310,6 +312,7 @@ def process_responses(responses, bmi_data, user_profile):
     physical_activity_values = []
     sleep_values = []
     digital_hygiene_values = []
+    has_vacation_answers = False
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -373,6 +376,8 @@ def process_responses(responses, bmi_data, user_profile):
             sleep_values.extend(values)
         elif response.question.description == "ЦИФРОВАЯ ГИГИЕНА":
             digital_hygiene_values.extend(values)
+        elif response.question.description == "ОТПУСК":
+            has_vacation_answers = True
 
         if category == 'lifestyle':
             handle_lifestyle_response(response, values, smoking_data, category_values)
@@ -453,7 +458,7 @@ def process_responses(responses, bmi_data, user_profile):
     # цифровая гигиена
     has_digital_issues = any(v in (0, 0.5) for v in digital_hygiene_values)
 
-    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity, has_sleep_issues, has_digital_issues
+    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity, has_sleep_issues, has_digital_issues, has_vacation_answers
 
 
 def get_response_category(response, categories):
@@ -582,7 +587,7 @@ def get_ratio_status(profile, data):
 
     return {'status': status, 'description': description}
 
-def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, physical_activity_data, sleep_data, has_digital_issues):
+def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, physical_activity_data, sleep_data, has_digital_issues, has_vacation_answers):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -644,6 +649,10 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
     })
     result.update({
         'digital_hygiene_alert': has_digital_issues
+    })
+
+    result.update({
+        'vacation_alert': has_vacation_answers
     })
 
     # Общие показатели
