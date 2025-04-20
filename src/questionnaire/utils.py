@@ -19,7 +19,14 @@ def get_question_categories():
             'label': 'Пищевое поведение'
         },
         'work_assessment': {
-            'descriptions': ["САМООЦЕНКА ТРУДОВОГО ПРОЦЕССА"],
+            'descriptions': ["САМООЦЕНКА ТРУДОВОГО ПРОЦЕССА",
+                             "РАБОЧЕЕ МЕСТО",
+                             "ФИЗИЧЕСКИЕ НАГРУЗКИ",
+                             "ТЕМП РАБОТЫ",
+                             "ЭМОЦИОНАЛЬНАЯ НАГРУЗКА",
+                             "УТОМЛЯЕМОСТЬ",
+                             "ГРАФИК РАБОТЫ",
+                             "ТРУД С ЦИФРОВЫМИ УСТРОЙСТВАМИ"],
             'label': 'Самооценка труда'
         },
         'lifestyle': {
@@ -62,8 +69,11 @@ def calculate_user_rating(user_profile):
     bmi_data = calculate_bmi_data(user_profile)
 
     # Обработка ответов и категорий
-    category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity, has_sleep_issues, has_digital_issues, has_vacation_answers, alcohol_alert, smoking_alert  = process_responses(responses, bmi_data, user_profile)
-
+    (category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data,
+     glucose_data, has_low_activity, has_sleep_issues, has_digital_issues,
+     has_vacation_answers, alcohol_alert, smoking_alert, has_workplace_issues,
+     has_physical_load_issues, has_work_pace_issues, has_emotional_load_issues,
+     has_fatigue_issues, has_schedule_issues, has_digital_work_issues)  = process_responses(responses, bmi_data, user_profile)
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
 
@@ -88,7 +98,14 @@ def calculate_user_rating(user_profile):
         has_digital_issues,
         has_vacation_answers,
         alcohol_alert,
-        smoking_alert
+        smoking_alert,
+        has_workplace_issues,
+        has_physical_load_issues,
+        has_work_pace_issues,
+        has_emotional_load_issues,
+        has_fatigue_issues,
+        has_schedule_issues,
+        has_digital_work_issues
     )
 
     return result
@@ -318,6 +335,13 @@ def process_responses(responses, bmi_data, user_profile):
     has_vacation_answers = False
     alcohol_alert = False
     smoking_alert = False
+    workplace_values = []
+    physical_load_values = []
+    work_pace_values = []
+    emotional_load_values = []
+    fatigue_values = []
+    schedule_values = []
+    digital_work_values = []
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -387,6 +411,21 @@ def process_responses(responses, bmi_data, user_profile):
             alcohol_alert = True
         elif "Курение" in response.question.description:
             smoking_alert = True
+        elif response.question.description == "РАБОЧЕЕ МЕСТО":
+            workplace_values.extend(values)
+        elif response.question.description == "ФИЗИЧЕСКИЕ НАГРУЗКИ":
+            physical_load_values.extend(values)
+        elif response.question.description == "ТЕМП РАБОТЫ":
+            work_pace_values.extend(values)
+        elif response.question.description == "ЭМОЦИОНАЛЬНАЯ НАГРУЗКА":
+            emotional_load_values.extend(values)
+        elif response.question.description == "УТОМЛЯЕМОСТЬ":
+            fatigue_values.extend(values)
+        elif response.question.description == "ГРАФИК РАБОТЫ":
+            schedule_values.extend(values)
+        elif response.question.description == "ТРУД С ЦИФРОВЫМИ УСТРОЙСТВАМИ":
+            digital_work_values.extend(values)
+
 
         if category == 'lifestyle':
             handle_smoking_response(response, values, smoking_data, category_values)
@@ -466,8 +505,26 @@ def process_responses(responses, bmi_data, user_profile):
     has_sleep_issues = any(v in (0, 0.5) for v in sleep_values)
     # цифровая гигиена
     has_digital_issues = any(v in (0, 0.5) for v in digital_hygiene_values)
+    # рабочее место
+    has_workplace_issues = any(v in (0, 0.5) for v in workplace_values)
+    # физические нагрузки
+    has_physical_load_issues = any(v in (0, 0.5) for v in physical_load_values)
+    # тем работы
+    has_work_pace_issues = any(v in (0, 0.5) for v in work_pace_values)
+    # эмоциональная нагрузка
+    has_emotional_load_issues = any(v in (0, 0.5) for v in emotional_load_values)
+    # утомнляемость
+    has_fatigue_issues = any(v in (0, 0.5) for v in fatigue_values)
+    # график работы
+    has_schedule_issues = any(v in (0, 0.5) for v in schedule_values)
+    # труд с цифровыми устройствами
+    has_digital_work_issues = any(v in (0, 0.5) for v in digital_work_values)
 
-    return category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, has_low_activity, has_sleep_issues, has_digital_issues, has_vacation_answers, alcohol_alert, smoking_alert
+
+    return (category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data,
+            glucose_data, has_low_activity, has_sleep_issues, has_digital_issues, has_vacation_answers,
+            alcohol_alert, smoking_alert, has_workplace_issues, has_physical_load_issues, has_work_pace_issues,
+            has_emotional_load_issues, has_fatigue_issues, has_schedule_issues, has_digital_work_issues)
 
 
 def get_response_category(response, categories):
@@ -596,7 +653,11 @@ def get_ratio_status(profile, data):
 
     return {'status': status, 'description': description}
 
-def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data, glucose_data, physical_activity_data, sleep_data, has_digital_issues, has_vacation_answers, alcohol_alert, smoking_alert):
+def update_result(user_profile, result, bmi_data, category_averages, total_score, smoking_data, diseases,
+                  waist_hip_data, bp_data, cholesterol_data, glucose_data, physical_activity_data, sleep_data,
+                  has_digital_issues, has_vacation_answers, alcohol_alert, smoking_alert, has_workplace_issues,
+                  has_physical_load_issues, has_work_pace_issues, has_emotional_load_issues, has_fatigue_issues,
+                  has_schedule_issues, has_digital_work_issues):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -674,8 +735,34 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
         else None,
         'smoking_alert': smoking_alert
     })
-    print(smoking_data['cigarettes'])
-    print(smoking_data['years'])
+
+    result.update({
+        'has_workplace_issues': has_workplace_issues
+    })
+
+    result.update({
+        'has_physical_load_issues': has_physical_load_issues
+    })
+
+    result.update({
+        'has_work_pace_issues': has_work_pace_issues
+    })
+
+    result.update({
+        'has_emotional_load_issues': has_emotional_load_issues
+    })
+
+    result.update({
+        'has_fatigue_issues': has_fatigue_issues
+    })
+
+    result.update({
+        'has_schedule_issues': has_schedule_issues
+    })
+
+    result.update({
+        'has_digital_work_issues': has_digital_work_issues
+    })
 
     # Общие показатели
     result['total_score'] = round(total_score, 2)
