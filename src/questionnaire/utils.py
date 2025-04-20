@@ -11,11 +11,23 @@ def get_question_categories():
             'label': 'СТРЕСС'
         },
         'nutrition': {
-            'descriptions': ["ПИТАНИЕ"],
+            'descriptions': ["ПИТАНИЕ",
+                             "ПРИЕМЫ ПИЩИ",
+                             "ВРЕМЯ ПЕРЕРЫВОВ МЕЖДУ ЕДОЙ",
+                             "ЗАВТРАК",
+                             "НАИБОЛЕЕ ПЛОТНЫЙ ПРИЕМ ПИЩИ",
+                             "ЕДА ДО СНА",
+                             "ВИД ЖИРОВ",
+                             "ГОЛОД",
+                             "ЭМОЦИОНАЛЬНЫЕ ПЕРЕКУСЫ",
+                             "ПООЩРЕНИЕ ИЛИ НАКАЗАНИЕ ЕДОЙ"],
             'label': 'ПИТАНИЕ'
         },
         'eating_behavior': {
-            'descriptions': ["Как часто Вы употребляете следующие продукты и напитки"],
+            'descriptions': ["Как часто Вы употребляете следующие продукты и напитки",
+                             "СНЕКИ",
+                             "ФАСТ-ФУД",
+                             "СЛАДКАЯ ГАЗИРОВКА"],
             'label': 'Пищевое поведение'
         },
         'work_assessment': {
@@ -26,7 +38,12 @@ def get_question_categories():
                              "ЭМОЦИОНАЛЬНАЯ НАГРУЗКА",
                              "УТОМЛЯЕМОСТЬ",
                              "ГРАФИК РАБОТЫ",
-                             "ТРУД С ЦИФРОВЫМИ УСТРОЙСТВАМИ"],
+                             "ТРУД С ЦИФРОВЫМИ УСТРОЙСТВАМИ",
+                             "КРИТИЧЕСКИЕ СИТУАЦИИ",
+                             "ЭКСТРА УСИЛИЯ",
+                             "РЕГЛАМЕНТИРОВАННЫЕ ПЕРЕРЫВЫ",
+                             "ОБЕДЕННЫЙ ПЕРЕРЫВ",
+                             "РАБОТА НА ДОМУ"],
             'label': 'Самооценка труда'
         },
         'lifestyle': {
@@ -73,7 +90,10 @@ def calculate_user_rating(user_profile):
      glucose_data, has_low_activity, has_sleep_issues, has_digital_issues,
      has_vacation_answers, alcohol_alert, smoking_alert, has_workplace_issues,
      has_physical_load_issues, has_work_pace_issues, has_emotional_load_issues,
-     has_fatigue_issues, has_schedule_issues, has_digital_work_issues)  = process_responses(responses, bmi_data, user_profile)
+     has_fatigue_issues, has_schedule_issues, has_digital_work_issues, critical_data,
+     extra_effort_data, has_breaks_issues, has_lunch_issues, remote_work_data, meal_data, interval_data,
+     breakfast_data, density_data, has_evening_meal_issues, has_fat_issues, has_hunger_issues,
+     emotional_eating_data, has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues)  = process_responses(responses, bmi_data, user_profile)
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
 
@@ -105,7 +125,24 @@ def calculate_user_rating(user_profile):
         has_emotional_load_issues,
         has_fatigue_issues,
         has_schedule_issues,
-        has_digital_work_issues
+        has_digital_work_issues,
+        critical_data,
+        extra_effort_data,
+        has_breaks_issues,
+        has_lunch_issues,
+        remote_work_data,
+        meal_data,
+        interval_data,
+        breakfast_data,
+        density_data,
+        has_evening_meal_issues,
+        has_fat_issues,
+        has_hunger_issues,
+        emotional_eating_data,
+        has_food_reward_issues,
+        has_snack_issues,
+        fast_food_data,
+        has_soda_issues
     )
 
     return result
@@ -342,6 +379,23 @@ def process_responses(responses, bmi_data, user_profile):
     fatigue_values = []
     schedule_values = []
     digital_work_values = []
+    critical_values = []
+    extra_effort_values = []
+    breaks_values = []
+    lunch_break_values = []
+    remote_work_values = []
+    meal_values = []
+    interval_values = []
+    breakfast_values = []
+    density_values = []
+    evening_meal_values = []
+    fat_values = []
+    hunger_values = []
+    emotional_eating_values = []
+    food_reward_values = []
+    snack_values = []
+    fast_food_values = []
+    soda_values = []
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -425,7 +479,40 @@ def process_responses(responses, bmi_data, user_profile):
             schedule_values.extend(values)
         elif response.question.description == "ТРУД С ЦИФРОВЫМИ УСТРОЙСТВАМИ":
             digital_work_values.extend(values)
-
+        elif response.question.description == "КРИТИЧЕСКИЕ СИТУАЦИИ":
+            critical_values.extend(values)
+        elif response.question.description == "ЭКСТРА УСИЛИЯ":
+            extra_effort_values.extend(values)
+        elif response.question.description == "РЕГЛАМЕНТИРОВАННЫЕ ПЕРЕРЫВЫ":
+            breaks_values.extend(values)
+        elif response.question.description == "ОБЕДЕННЫЙ ПЕРЕРЫВ":
+            lunch_break_values.extend(values)
+        elif response.question.description == "РАБОТА НА ДОМУ":
+            remote_work_values.extend(values)
+        elif response.question.description == "ПРИЕМЫ ПИЩИ":
+            meal_values.extend(values)
+        elif response.question.description == "ВРЕМЯ ПЕРЕРЫВОВ МЕЖДУ ЕДОЙ":
+            interval_values.extend(values)
+        elif response.question.description == "ЗАВТРАК":
+            breakfast_values.extend(values)
+        elif response.question.description == "НАИБОЛЕЕ ПЛОТНЫЙ ПРИЕМ ПИЩИ":
+            density_values.extend(values)
+        elif response.question.description == "ЕДА ДО СНА":
+            evening_meal_values.extend(values)
+        elif response.question.description == "ВИД ЖИРОВ":
+            fat_values.extend(values)
+        elif response.question.description == "ГОЛОД":
+            hunger_values.extend(values)
+        elif response.question.description == "ЭМОЦИОНАЛЬНЫЕ ПЕРЕКУСЫ":
+            emotional_eating_values.extend(values)
+        elif response.question.description == "ПООЩРЕНИЕ ИЛИ НАКАЗАНИЕ ЕДОЙ":
+            food_reward_values.extend(values)
+        elif response.question.description == "СНЕКИ":
+            snack_values.extend(values)
+        elif response.question.description == "ФАСТ-ФУД":
+            fast_food_values.extend(values)
+        elif response.question.description == "СЛАДКАЯ ГАЗИРОВКА":
+            soda_values.extend(values)
 
         if category == 'lifestyle':
             handle_smoking_response(response, values, smoking_data, category_values)
@@ -519,12 +606,86 @@ def process_responses(responses, bmi_data, user_profile):
     has_schedule_issues = any(v in (0, 0.5) for v in schedule_values)
     # труд с цифровыми устройствами
     has_digital_work_issues = any(v in (0, 0.5) for v in digital_work_values)
+    # критические ситуации
+    critical_data = {
+            'has_critical_0': any(v == 0 for v in critical_values),
+            'has_critical_05': any(v == 0.5 for v in critical_values),
+            'has_critical_079': any(v == 0.79 for v in critical_values)
+        }
+    # экстра усилия
+    extra_effort_data = {
+        'has_extra_05': any(v == 0.5 for v in extra_effort_values),
+        'has_extra_0': any(v == 0 for v in extra_effort_values)
+    }
+    # регламентированные перерывы
+    has_breaks_issues = any(v in {0, 0.5, 0.79} for v in breaks_values)
+    # обеденные перерывы
+    has_lunch_issues = any(v in {0, 0.5} for v in lunch_break_values)
+    # работа на дом
+    remote_work_data = {
+            'has_remote_05': any(v == 0.5 for v in remote_work_values),
+            'has_remote_0': any(v == 0 for v in remote_work_values)
+        }
+    # приемы пищи
+    meal_data = {
+            'has_meal_05': any(v == 0.5 for v in meal_values),
+            'has_meal_0': any(v == 0 for v in meal_values)
+        }
+    # перерыв между едой
+    interval_data = {
+        'has_interval_05': any(v == 0.5 for v in interval_values),
+        'has_interval_0': any(v == 0 for v in interval_values)
+    }
+    # завтрак
+    breakfast_data = {
+            'has_breakfast_0': any(v == 0 for v in breakfast_values),
+            'has_breakfast_05': any(v == 0.5 for v in breakfast_values),
+            'has_breakfast_079': any(v == 0.79 for v in breakfast_values)
+        }
+    # наиболее плотный прием пищи
+    density_data = {
+            'has_density_05': any(v == 0.5 for v in density_values),
+            'has_density_0': any(v == 0 for v in density_values)
+        }
+    # еда до сна
+    has_evening_meal_issues = any(v in {0, 0.5} for v in evening_meal_values)
+    # виды жиров
+    has_fat_issues = any(v in {0, 0.5} for v in fat_values)
+    # голод
+    has_hunger_issues = any(v in {0, 0.5, 0.79} for v in hunger_values)
+    # эмоциональные перекусы
+    has_emotional_eating_0 = any(v == 0 for v in emotional_eating_values)
+    has_emotional_eating_05 = any(v == 0.5 for v in emotional_eating_values) and not has_emotional_eating_0
+    has_emotional_eating_079 = any(v == 0.79 for v in emotional_eating_values) and not (
+                has_emotional_eating_0 or has_emotional_eating_05)
+    all_healthy = all(v == 1 for v in emotional_eating_values)
+    emotional_eating_data = {
+            'has_emotional_eating_0': has_emotional_eating_0,
+            'has_emotional_eating_05': has_emotional_eating_05,
+            'has_emotional_eating_079': has_emotional_eating_079,
+            'all_healthy': all_healthy
+        }
+    # поощрение или наказание едой
+    has_food_reward_issues = any(v in {0, 0.5, 0.79} for v in food_reward_values)
+    # снеки
+    has_snack_issues = any(v in {0, 0.5, 0.79} for v in snack_values)
+    # фаст-фуд
+    fast_food_data = {
+            'has_fast_food_0': any(v == 0 for v in fast_food_values),
+            'has_fast_food_05': any(v == 0.5 for v in fast_food_values),
+            'has_fast_food_079': any(v == 0.79 for v in fast_food_values)
+        }
+    # сладкая газировка
+    has_soda_issues = any(v in {0, 0.5, 0.79} for v in food_reward_values)
 
 
     return (category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data,
             glucose_data, has_low_activity, has_sleep_issues, has_digital_issues, has_vacation_answers,
             alcohol_alert, smoking_alert, has_workplace_issues, has_physical_load_issues, has_work_pace_issues,
-            has_emotional_load_issues, has_fatigue_issues, has_schedule_issues, has_digital_work_issues)
+            has_emotional_load_issues, has_fatigue_issues, has_schedule_issues, has_digital_work_issues, critical_data,
+            extra_effort_data, has_breaks_issues, has_lunch_issues, remote_work_data, meal_data, interval_data,
+            breakfast_data, density_data, has_evening_meal_issues,has_fat_issues, has_hunger_issues,
+            emotional_eating_data, has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues)
 
 
 def get_response_category(response, categories):
@@ -657,7 +818,10 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
                   waist_hip_data, bp_data, cholesterol_data, glucose_data, physical_activity_data, sleep_data,
                   has_digital_issues, has_vacation_answers, alcohol_alert, smoking_alert, has_workplace_issues,
                   has_physical_load_issues, has_work_pace_issues, has_emotional_load_issues, has_fatigue_issues,
-                  has_schedule_issues, has_digital_work_issues):
+                  has_schedule_issues, has_digital_work_issues, critical_data, extra_effort_data, has_breaks_issues,
+                  has_lunch_issues, remote_work_data, meal_data, interval_data, breakfast_data, density_data,
+                  has_evening_meal_issues,has_fat_issues, has_hunger_issues,emotional_eating_data,
+                  has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -762,6 +926,74 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
 
     result.update({
         'has_digital_work_issues': has_digital_work_issues
+    })
+
+    result.update({
+        'critical_data': critical_data
+    })
+
+    result.update({
+        'extra_effort_data': extra_effort_data
+    })
+
+    result.update({
+        'has_breaks_issues': has_breaks_issues
+    })
+
+    result.update({
+        'has_lunch_issues': has_lunch_issues
+    })
+
+    result.update({
+        'remote_work_data': remote_work_data
+    })
+
+    result.update({
+        'meal_data': meal_data
+    })
+
+    result.update({
+        'interval_data': interval_data
+    })
+
+    result.update({
+        'breakfast_data': breakfast_data
+    })
+
+    result.update({
+        'density_data': density_data
+    })
+
+    result.update({
+        'has_evening_meal_issues': has_evening_meal_issues
+    })
+
+    result.update({
+        'has_fat_issues': has_fat_issues
+    })
+
+    result.update({
+        'has_hunger_issues': has_hunger_issues
+    })
+
+    result.update({
+        'emotional_eating_data': emotional_eating_data
+    })
+
+    result.update({
+        'has_food_reward_issues':has_food_reward_issues
+    })
+
+    result.update({
+        'has_snack_issues': has_snack_issues
+    })
+
+    result.update({
+        'fast_food_data': fast_food_data
+    })
+
+    result.update({
+        'has_soda_issues': has_soda_issues
     })
 
     # Общие показатели
