@@ -24,10 +24,29 @@ def get_question_categories():
             'label': 'ПИТАНИЕ'
         },
         'eating_behavior': {
-            'descriptions': ["Как часто Вы употребляете следующие продукты и напитки",
+            'descriptions': ["ПИЩЕВОЕ ПОВЕДЕНИЕ",
                              "СНЕКИ",
                              "ФАСТ-ФУД",
-                             "СЛАДКАЯ ГАЗИРОВКА"],
+                             "СЛАДКАЯ ГАЗИРОВКА",
+                             "КОЛБАСНЫЕ ИЗДЕЛИЯ",
+                             "КОПЧЕНЫЕ ПРОДУКТЫ",
+                             "ПИЩЕВЫЕ ЖИРЫ",
+                             "СОУСЫ",
+                             "ЖАРЕННЫЙ КАРТОФЕЛЬ",
+                             "СОЛЕНЫЕ И КОНСЕРВИРОВАННЫЕ ПРОДУКТЫ",
+                             "МОЛОЧНЫЕ ПРОДУКТЫ С ВЫСОКОЙ ЖИРНОСТЬЮ",
+                             "ВЫПЕЧКА",
+                             "КОЛИЧЕСТВО ФРУКТОВ И ОВОЩЕЙ",
+                             "ЗЛАКОВЫЕ ПРОДУКТЫ",
+                             "БОБОВЫЕ",
+                             "НЕЖИРНОЕ МЯСО",
+                             "РЫБА И МОРЕПРОДУКТЫ",
+                             "МОЛОКО И КИСЛОМОЛОЧКА",
+                             "РАСТИТЕЛЬНЫЕ МАСЛА",
+                             "ЖИДКОСТЬ В ДЕНЬ",
+                             "ДОСАЛИВАНИЕ",
+                             "СПЕЦИАЛЬНАЯ ПИЩЕВАЯ ПРОДУКЦИЯ",
+                             "БАДЫ"],
             'label': 'Пищевое поведение'
         },
         'work_assessment': {
@@ -93,7 +112,12 @@ def calculate_user_rating(user_profile):
      has_fatigue_issues, has_schedule_issues, has_digital_work_issues, critical_data,
      extra_effort_data, has_breaks_issues, has_lunch_issues, remote_work_data, meal_data, interval_data,
      breakfast_data, density_data, has_evening_meal_issues, has_fat_issues, has_hunger_issues,
-     emotional_eating_data, has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues)  = process_responses(responses, bmi_data, user_profile)
+     emotional_eating_data, has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues,
+     has_sosage_issues, has_smoked_issues, has_fat_products_issues, has_sauce_issues, has_fried_potato_issues,
+     has_salted_issues, has_high_fat_dairy_issues, has_baking_issues, has_fruits_veggies_answer,
+     has_grain_issues, has_legume_issues, has_lean_meat_issues, has_seafood_issues,
+     dairy_data, has_oil_answer, has_liquid_issues, has_salt_addition_issues,
+     has_special_foof_issues, has_supplements_issues)  = process_responses(responses, bmi_data, user_profile)
     # Расчет средних значений по категориям
     category_averages = calculate_category_averages(category_values)
 
@@ -142,7 +166,26 @@ def calculate_user_rating(user_profile):
         has_food_reward_issues,
         has_snack_issues,
         fast_food_data,
-        has_soda_issues
+        has_soda_issues,
+        has_sosage_issues,
+        has_smoked_issues,
+        has_fat_products_issues,
+        has_sauce_issues,
+        has_fried_potato_issues,
+        has_salted_issues,
+        has_high_fat_dairy_issues,
+        has_baking_issues,
+        has_fruits_veggies_answer,
+        has_grain_issues,
+        has_legume_issues,
+        has_lean_meat_issues,
+        has_seafood_issues,
+        dairy_data,
+        has_oil_answer,
+        has_liquid_issues,
+        has_salt_addition_issues,
+        has_special_foof_issues,
+        has_supplements_issues
     )
 
     return result
@@ -396,6 +439,25 @@ def process_responses(responses, bmi_data, user_profile):
     snack_values = []
     fast_food_values = []
     soda_values = []
+    sausage_values = []
+    smoked_values = []
+    fat_product_values = []
+    sauce_values = []
+    fried_potato_values = []
+    salted_values = []
+    high_fat_dairy_values = []
+    baking_values = []
+    has_fruits_veggies_answer = False
+    grain_values = []
+    legume_values = []
+    lean_meat_values = []
+    seafood_values = []
+    dairy_values = []
+    has_oil_answer = False
+    liquid_values = []
+    salt_addition_values = []
+    special_food_values = []
+    supplements_values = []
 
     # 1. Обработка обычных ответов
     for response in responses:
@@ -513,6 +575,44 @@ def process_responses(responses, bmi_data, user_profile):
             fast_food_values.extend(values)
         elif response.question.description == "СЛАДКАЯ ГАЗИРОВКА":
             soda_values.extend(values)
+        elif response.question.description == "КОЛБАСНЫЕ ИЗДЕЛИЯ":
+            sausage_values.extend(values)
+        elif response.question.description == "КОПЧЕНЫЕ ПРОДУКТЫ":
+            smoked_values.extend(values)
+        elif response.question.description == "ПИЩЕВЫЕ ЖИРЫ":
+            fat_product_values.extend(values)
+        elif response.question.description == "СОУСЫ":
+            sauce_values.extend(values)
+        elif response.question.description == "ЖАРЕННЫЙ КАРТОФЕЛЬ":
+            fried_potato_values.extend(values)
+        elif response.question.description == "СОЛЕНЫЕ И КОНСЕРВИРОВАННЫЕ ПРОДУКТЫ":
+            salted_values.extend(values)
+        elif response.question.description == "МОЛОЧНЫЕ ПРОДУКТЫ С ВЫСОКОЙ ЖИРНОСТЬЮ":
+            high_fat_dairy_values.extend(values)
+        elif response.question.description == "ВЫПЕЧКА":
+            baking_values.extend(values)
+        elif response.question.description == "КОЛИЧЕСТВО ФРУКТОВ И ОВОЩЕЙ":
+            has_fruits_veggies_answer = True
+        elif response.question.description == "ЗЛАКОВЫЕ ПРОДУКТЫ":
+            grain_values.extend(values)
+        elif response.question.description == "БОБОВЫЕ":
+            legume_values.extend(values)
+        elif response.question.description == "НЕЖИРНОЕ МЯСО":
+            lean_meat_values.extend(values)
+        elif response.question.description == "РЫБА И МОРЕПРОДУКТЫ":
+            seafood_values.extend(values)
+        elif response.question.description == "МОЛОКО И КИСЛОМОЛОЧКА":
+            dairy_values.extend(values)
+        elif response.question.description == "РАСТИТЕЛЬНЫЕ МАСЛА":
+            has_oil_answer = True
+        elif response.question.description == "ЖИДКОСТЬ В ДЕНЬ":
+            liquid_values.extend(values)
+        elif response.question.description == "ДОСАЛИВАНИЕ":
+            salt_addition_values.extend(values)
+        elif response.question.description == "СПЕЦИАЛЬНАЯ ПИЩЕВАЯ ПРОДУКЦИЯ":
+            special_food_values.extend(values)
+        elif response.question.description == "БАДЫ":
+            supplements_values.extend(values)
 
         if category == 'lifestyle':
             handle_smoking_response(response, values, smoking_data, category_values)
@@ -676,8 +776,44 @@ def process_responses(responses, bmi_data, user_profile):
             'has_fast_food_079': any(v == 0.79 for v in fast_food_values)
         }
     # сладкая газировка
-    has_soda_issues = any(v in {0, 0.5, 0.79} for v in food_reward_values)
-
+    has_soda_issues = any(v in {0, 0.5, 0.79} for v in soda_values)
+    # колбасные изделия
+    has_sosage_issues = any(v in {0, 0.5} for v in sausage_values)
+    # копченые продукты
+    has_smoked_issues = any(v in {0, 0.5} for v in smoked_values)
+    # пищевые жиры
+    has_fat_products_issues = any(v in {0, 0.5} for v in fat_product_values)
+    # соусы
+    has_sauce_issues = any(v in {0, 0.5} for v in sauce_values)
+    # жаренный картофель
+    has_fried_potato_issues = any(v in {0, 0.5} for v in fried_potato_values)
+    # соленые и консервированные продукты
+    has_salted_issues = any(v in {0, 0.5} for v in salted_values)
+    # молочные продукты с высоким содержанием жира
+    has_high_fat_dairy_issues = any(v in {0, 0.5} for v in high_fat_dairy_values)
+    # выпечка
+    has_baking_issues = any(v in {0, 0.5} for v in baking_values)
+    # злаковые
+    has_grain_issues = any(v in {0, 0.5, 0.79} for v in grain_values)
+    # бобовые
+    has_legume_issues = any(v in {0, 0.5} for v in legume_values)
+    # нежирное мясо
+    has_lean_meat_issues = any(v in {0, 0.5, 0.79} for v in lean_meat_values)
+    # рыба и морепродукты
+    has_seafood_issues = any(v in {0, 0.5} for v in seafood_values)
+    # молоко и кисломолочка
+    dairy_data = {
+        'has_dairy_low': any(v in (0.5, 0.79) for v in dairy_values),
+        'has_dairy_0': any(v == 0 for v in dairy_values)
+    }
+    # жидкость в день
+    has_liquid_issues = any(v in {0, 0.5} for v in liquid_values)
+    # досаливание
+    has_salt_addition_issues = any(v in {0, 0.5} for v in salt_addition_values)
+    # специальная пищевая продукция
+    has_special_foof_issues = any(v in {0, 0.5} for v in special_food_values)
+    # бады
+    has_supplements_issues = any(v in {0, 0.5} for v in supplements_values)
 
     return (category_values, smoking_data, diseases, waist_hip_data, bp_data, cholesterol_data,
             glucose_data, has_low_activity, has_sleep_issues, has_digital_issues, has_vacation_answers,
@@ -685,7 +821,11 @@ def process_responses(responses, bmi_data, user_profile):
             has_emotional_load_issues, has_fatigue_issues, has_schedule_issues, has_digital_work_issues, critical_data,
             extra_effort_data, has_breaks_issues, has_lunch_issues, remote_work_data, meal_data, interval_data,
             breakfast_data, density_data, has_evening_meal_issues,has_fat_issues, has_hunger_issues,
-            emotional_eating_data, has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues)
+            emotional_eating_data, has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues,
+            has_sosage_issues, has_smoked_issues, has_fat_products_issues,has_sauce_issues, has_fried_potato_issues,
+            has_salted_issues, has_high_fat_dairy_issues, has_baking_issues, has_fruits_veggies_answer,
+            has_grain_issues, has_legume_issues, has_lean_meat_issues, has_seafood_issues, dairy_data, has_oil_answer,
+            has_liquid_issues, has_salt_addition_issues, has_special_foof_issues, has_supplements_issues)
 
 
 def get_response_category(response, categories):
@@ -821,7 +961,11 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
                   has_schedule_issues, has_digital_work_issues, critical_data, extra_effort_data, has_breaks_issues,
                   has_lunch_issues, remote_work_data, meal_data, interval_data, breakfast_data, density_data,
                   has_evening_meal_issues,has_fat_issues, has_hunger_issues,emotional_eating_data,
-                  has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues):
+                  has_food_reward_issues, has_snack_issues, fast_food_data, has_soda_issues, has_sosage_issues,
+                  has_smoked_issues, has_fat_products_issues,has_sauce_issues, has_fried_potato_issues,
+                  has_salted_issues, has_high_fat_dairy_issues, has_baking_issues, has_fruits_veggies_answer,
+                  has_grain_issues, has_legume_issues, has_lean_meat_issues, has_seafood_issues, dairy_data,
+                  has_oil_answer, has_liquid_issues, has_salt_addition_issues, has_special_foof_issues, has_supplements_issues):
     """Обновление итогового результата"""
     # Обновление категорий
     result.update(category_averages)
@@ -994,6 +1138,82 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
 
     result.update({
         'has_soda_issues': has_soda_issues
+    })
+
+    result.update({
+        'has_sosage_issues': has_sosage_issues
+    })
+
+    result.update({
+        'has_smoked_issues': has_smoked_issues
+    })
+
+    result.update({
+        'has_fat_products_issues': has_fat_products_issues
+    })
+
+    result.update({
+        'has_sauce_issues': has_sauce_issues
+    })
+
+    result.update({
+        'has_fried_potato_issues': has_fried_potato_issues
+    })
+
+    result.update({
+        'has_salted_issues':has_salted_issues
+    })
+
+    result.update({
+        'has_high_fat_dairy_issues': has_high_fat_dairy_issues
+    })
+
+    result.update({
+        'has_baking_issues': has_baking_issues
+    })
+
+    result.update({
+        'has_fruits_veggies_answer': has_fruits_veggies_answer
+    })
+
+    result.update({
+        'has_grain_issues': has_grain_issues
+    })
+
+    result.update({
+        'has_legume_issues': has_legume_issues
+    })
+
+    result.update({
+        'has_lean_meat_issues': has_lean_meat_issues
+    })
+
+    result.update({
+        'has_seafood_issues': has_seafood_issues
+    })
+
+    result.update({
+        'dairy_data': dairy_data
+    })
+
+    result.update({
+        'has_oil_answer': has_oil_answer
+    })
+
+    result.update({
+        'has_liquid_issues': has_liquid_issues
+    })
+
+    result.update({
+        'has_salt_addition_issues': has_salt_addition_issues
+    })
+
+    result.update({
+        'has_special_foof_issues': has_special_foof_issues
+    })
+
+    result.update({
+        'has_supplements_issues': has_supplements_issues
     })
 
     # Общие показатели
