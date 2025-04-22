@@ -407,7 +407,7 @@ def process_responses(responses, bmi_data, user_profile):
     diseases = []
     waist_hip_data = {'waist': None, 'hip': None}
     bp_data = {'systolic': None, 'diastolic': None, 'unknown': False}
-    cholesterol_data = {'value': None}
+    cholesterol_data = {'value': None, 'unknown': False}
     glucose_data = {'value': None, 'unknown': False}
     physical_activity_values = []
     sleep_values = []
@@ -674,7 +674,7 @@ def process_responses(responses, bmi_data, user_profile):
     # 6. Общий холестерин
     if cholesterol_data['value'] and cholesterol_data['value'] > 5.5:
         category_values['medico_biological'].append(0.0)
-    elif not cholesterol_data['unknown']:
+    elif not cholesterol_data.get('unknown', False):
         # Нормальные значения не влияют на оценку
         category_values['medico_biological'].append(1.0)
 
@@ -1008,8 +1008,8 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
 
     result.update({
         'cholesterol_value': cholesterol_data.get('value'),
-        'cholesterol_status': 'high' if cholesterol_data.get('value', 0) > 5.5 else 'normal',
-        'cholesterol_unknown': cholesterol_data['unknown']
+        'cholesterol_status': 'high' if (cholesterol_data.get('value') or 0) > 5.5 else 'normal',
+        'cholesterol_unknown': cholesterol_data.get('unknown', False)
     })
 
     result.update({
