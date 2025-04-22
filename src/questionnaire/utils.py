@@ -473,26 +473,40 @@ def process_responses(responses, bmi_data, user_profile):
 
         # Сбор данных для талии/бедер
         if response.question.description == "ОКРУЖНОСТЬ (ТАЛИИ)":
-            waist_hip_data['waist'] = response.numeric_answer if response.numeric_answer else None
+            waist_value = response.numeric_answer
+            if waist_value is not None and 50 <= waist_value <= 200:  # Валидация
+                # Балл за талию
+                if user_profile.gender == 'M':
+                    waist_score = 1.0 if waist_value <= 94 else (0.5 if waist_value <= 102 else 0.0)
+                else:
+                    waist_score = 1.0 if waist_value <= 80 else (0.5 if waist_value <= 88 else 0.0)
+                category_values['medico_biological'].append(waist_score)
+                waist_hip_data['waist'] = waist_value
         elif response.question.description == "ОКРУЖНОСТЬ (БЕДЕР)":
-            waist_hip_data['hip'] = response.numeric_answer if response.numeric_answer else None
+            hip_value = response.numeric_answer
+            if hip_value is not None and 50 <= hip_value <= 200:  # Валидация
+                waist_hip_data['hip'] = hip_value
         elif response.question.description == "ОБЩИЙ ХОЛЕСТЕРИН":
             if response.numeric_answer is not None:
-                cholesterol_data['value'] = float(response.numeric_answer)
-                cholesterol_data['unknown'] = False
+                try:
+                    value = float(response.numeric_answer)
+                    cholesterol_data['value'] = value
+                    cholesterol_data['unknown'] = False
+                    # Непосредственно добавляем балл
+                    cholesterol_score = 1.0 if value <= 5.5 else 0.0
+                    category_values['medico_biological'].append(cholesterol_score)
+                except:
+                    cholesterol_data['unknown'] = True
             else:
                 cholesterol_data['unknown'] = True
         elif response.question.description == "УРОВЕНЬ ГЛЮКОЗЫ":
             if response.numeric_answer is not None:
                 try:
                     value = float(response.numeric_answer)
-                    # Если значение 0 - считаем неизвестным
                     if value == 0.0:
-                        glucose_data['unknown'] = True
-                        glucose_data['value'] = None
+                        glucose_data.update({'unknown': True, 'value': None})
                     else:
-                        glucose_data['value'] = value
-                        glucose_data['unknown'] = False
+                        glucose_data.update({'value': value, 'unknown': False})
                 except:
                     glucose_data['unknown'] = True
             else:
@@ -616,6 +630,8 @@ def process_responses(responses, bmi_data, user_profile):
 
         if category == 'lifestyle':
             handle_smoking_response(response, values, smoking_data, category_values)
+        elif category == 'medico_biological':
+            pass
         else:
             category_values[category].extend(values)
 
@@ -624,67 +640,48 @@ def process_responses(responses, bmi_data, user_profile):
         smoking_index = (smoking_data['cigarettes'] * smoking_data['years']) / 20
         category_values['lifestyle'].append(min(smoking_index, 1.0))
 
-    # 3. Добавляем ИМТ как отдельный показатель
-    medico_bio_value = 1.0 if bmi_data.get('category') == 'Нормальный ИМТ' else 0.0
-    category_values.setdefault('medico_biological', []).append(medico_bio_value)
+    # 3. Добавляем ИМТ как отдельный показатель (исправленная версия)
+    bmi_score_map = {
+        "Нормальный ИМТ": 1.0,
+        "Избыточная масса тела": 0.5,
+        "Ожирение I ст.": 0.3,
+        "Ожирение II ст.": 0.1,
+        "Ожирение III ст.": 0.0
+    }
+    bmi_score = bmi_score_map.get(bmi_data.get('category', ''), 0.0)
+    category_values['medico_biological'].append(bmi_score)
 
     # 4. Расчет показателей талии/бедер
 
-    waist_status = 1
-    ratio_status = 1
+    if waist_hip_data['waist'] is not None and waist_hip_data['hip'] is not None and waist_hip_data['hip'] > 0:
+        ratio = waist_hip_data['waist'] / waist_hip_data['hip']
 
-    if waist_hip_data['waist'] and user_profile.gender:
-        # Проверка для талии
         if user_profile.gender == 'M':
-            if waist_hip_data['waist'] > 102:
-                waist_status = 0
-            elif waist_hip_data['waist'] > 94:
-                waist_status = 0
-        else:  # Female
-            if waist_hip_data['waist'] > 88:
-                waist_status = 0
-            elif waist_hip_data['waist'] > 80:
-                waist_status = 0
+            ratio_score = 1.0 if ratio < 0.9 else 0.0
+        else:
+            ratio_score = 1.0 if ratio < 0.85 else 0.0
 
-        # Расчет соотношения
-        if waist_hip_data['hip'] and waist_hip_data['hip'] > 0:
-            ratio = waist_hip_data['waist'] / waist_hip_data['hip']
-            if user_profile.gender == 'M' and ratio >= 0.9:
-                ratio_status = 0
-            elif user_profile.gender == 'F' and ratio >= 0.85:
-                ratio_status = 0
+        category_values['medico_biological'].append(ratio_score)
 
-    # Добавляем в категорию
-    category_values['medico_biological'].extend([waist_status, ratio_status])
-
-    # 5. Расчет показателей артериального давления
-    bp_status = get_bp_status(bp_data)  # Получаем статус давления
-    bp_score = 0.0
-
-    if bp_status == 'high':
-        bp_score = 0.0
-    elif bp_status == 'elevated':
-        bp_score = 0.5
-    elif bp_status == 'normal':
-        bp_score = 1.0
-
-    # Добавляем балл давления в категорию
+    # 5. Артериальное давление (остается без изменений)
+    bp_status = get_bp_status(bp_data)
+    bp_score = 1.0 if bp_status == 'normal' else (0.5 if bp_status == 'elevated' else 0.0)
     category_values['medico_biological'].append(bp_score)
 
-    # 6. Общий холестерин
-    if cholesterol_data['value'] and cholesterol_data['value'] > 5.5:
-        category_values['medico_biological'].append(0.0)
-    elif not cholesterol_data.get('unknown', False):
-        # Нормальные значения не влияют на оценку
-        category_values['medico_biological'].append(1.0)
+    #6. халестерин. Балл добавляем выше при обработке
 
     #7. глюкоза
-    if glucose_data['value'] and glucose_data['value'] > 6.1:
-        category_values['medico_biological'].append(0.0)
-    elif glucose_data['value'] and glucose_data['value'] > 5.6:
-        category_values['medico_biological'].append(0.5)
+    if not glucose_data['unknown'] and glucose_data['value'] is not None:
+        value = glucose_data['value']
+        if value > 6.1:
+            category_values['medico_biological'].append(0.0)
+        elif value > 5.6:
+            category_values['medico_biological'].append(0.5)
+        else:
+            category_values['medico_biological'].append(1.0)
     else:
-        category_values['medico_biological'].append(1.0)
+        # Обработка неизвестного значения
+        category_values['medico_biological'].append(0.0)
 
     # двигательная активность
     has_low_activity = any(v in (0, 0.5) for v in physical_activity_values)
