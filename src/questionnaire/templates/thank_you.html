@@ -3,69 +3,119 @@
 {% block title %}Спасибо!{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-sm p-4 text-center" style="max-width: 600px; width: 100%;">
-        <h2 class="text-success mb-4">Спасибо за прохождение анкеты!</h2>
-
-        <!-- Блок с результатами -->
-        <div class="results-block mb-4">
-            <h4 class="mb-3">Ваши результаты:</h4>
-
-            <!-- Общая оценка -->
-            <div class="alert alert-primary">
-                <h5 class="mb-2">Общая оценка:</h5>
-                <div class="display-4 text-dark mb-2">{{ rating }}</div>
-                <p class="mb-0">Средний балл: {{ total_score|floatformat:2 }}</p>
+<div class="container-xxl">
+    <div class="row">
+        <!-- Навигация Scrollspy -->
+        <div class="col-md-3 mb-4">
+            <div id="navbar-scrollspy" class="sticky-top" style="top: 20px;">
+                <nav class="nav nav-pills flex-column">
+                    <a class="nav-link" href="#common-recommendations">Общие рекомендации</a>
+                    <a class="nav-link" href="#details">Детализация</a>
+                    <a class="nav-link" href="#mbi">Медико-биологические</a>
+                    <a class="nav-link" href="#lifestyle">Образ жизни</a>
+                    <a class="nav-link" href="#work">Самооценка трудового процесса</a>
+                    <a class="nav-link" href="#nutrition">Питание</a>
+                    <a class="nav-link" href="#food">Отдельные продукты</a>
+                    <a class="nav-link" href="#stress">Стресс</a>
+                </nav>
             </div>
-            {% include 'partials/common_recommendations.html' %}
-            {% include 'partials/details.html' %}
-            <hr> <!-- Медико-биологические факторы -->
-            {% include 'partials/mbi.html' %}
-            <hr> <!-- Образ жизни и режим дня -->
-            {% include 'partials/lifestyle.html' %}
-            <hr> <!-- Питание -->
-            {% include 'partials/nutrition.html' %}
-            <hr> <!-- Комментарий по отдельным продуктам и напиткам -->
-            {% include 'partials/food.html' %}
-            <hr> <!-- Стресс -->
-            {% include 'partials/stress.html' %}
         </div>
 
-        <a href="/" class="btn btn-primary mt-3">Вернуться на главную</a>
+        <!-- Основной контент -->
+        <div class="col-md-9">
+            <div data-bs-spy="scroll" data-bs-target="#navbar-scrollspy" data-bs-offset="0" tabindex="0"
+                 class="card shadow-sm p-4" style="min-height: 80vh;">
+
+                <h2 class="text-success mb-4 text-center">Спасибо за прохождение анкеты!</h2>
+
+                <!-- Секции с контентом -->
+                <section id="common-results" class="mb-5">
+                    <div class="alert alert-primary">
+                        <h5 class="mb-2">Общая оценка:</h5>
+                        <div class="display-4 text-dark mb-2">{{ rating }}</div>
+                        <p class="mb-0">Средний балл: {{ total_score|floatformat:2 }}</p>
+                    </div>
+                </section>
+
+                <section id="common-recommendations" class="mb-5">
+                    <h2 class="text mb-4 text-center">Общие рекомендации</h2>
+                    {% include 'partials/common_recommendations.html' %}
+                </section>
+
+                <section id="details" class="mb-5">
+                    <h2 class="text mb-4 text-center">Детализация</h2>
+                    {% include 'partials/details.html' %}
+                </section>
+
+                <hr>
+
+                <section id="mbi" class="mb-5">
+                    <h2 class="text mb-4 text-center">Медико-биологические факторы</h2>
+                    {% include 'partials/mbi.html' %}
+                </section>
+
+                <section id="lifestyle" class="mb-5">
+                    <h2 class="text mb-4 text-center">Образ жизни и режим дня</h2>
+                    {% include 'partials/lifestyle.html' %}
+                </section>
+
+                <section id="work" class="mb-5">
+                    <h2 class="text mb-4 text-center">Самооценка трудового процесса</h2>
+                    {% include 'partials/work.html' %}
+                </section>
+
+                <section id="nutrition" class="mb-5">
+                     <h2 class="text mb-4 text-center">Питание</h2>
+                    {% include 'partials/nutrition.html' %}
+                </section>
+
+                <section id="food" class="mb-5">
+                    <h2 class="text mb-4 text-center">Пищевые привычки</h2>
+                    {% include 'partials/food.html' %}
+                </section>
+
+                <section id="stress" class="mb-5">
+                    <h2 class="text mb-4 text-center">Стресс</h2>
+                    {% include 'partials/stress.html' %}
+                </section>
+
+                <div class="text-center">
+                    <a href="/" class="btn btn-primary">Вернуться на главную</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <style>
-    .results-block {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 20px;
-        border: 1px solid #eee;
+    /* Стили для Scrollspy */
+    .nav-pills .nav-link.active {
+        background-color: #0d6efd;
+        color: white !important;
     }
 
-    .display-4 {
-        font-size: 2.5rem;
-        font-weight: 300;
-        line-height: 1.2;
+    .nav-pills .nav-link {
+        color: #0d6efd;
+        transition: all 0.3s ease;
     }
 
-    .badge.rounded-pill {
-        font-size: 0.9em;
-        min-width: 50px;
+    section {
+        scroll-margin-top: 80px; /* Отступ для фиксированной шапки */
     }
 
-    .alert ul {
-        margin-bottom: 0;
-        padding-left: 1.5rem;
+    .sticky-top {
+        z-index: 1000;
     }
 
-    .alert li {
-        margin: 0.3rem 0;
-    }
+    @media (max-width: 768px) {
+        .row {
+            flex-direction: column-reverse;
+        }
 
-    .alert-secondary {
-        background: #f8f9fa;
-        border-color: #dee2e6;
+        #navbar-scrollspy {
+            position: static !important;
+            margin-bottom: 20px;
+        }
     }
 </style>
 {% endblock %}
