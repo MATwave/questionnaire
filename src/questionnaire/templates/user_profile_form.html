@@ -26,14 +26,25 @@
 
         <div class="mb-3">
             <label for="height" class="form-label">Рост (см)</label>
-            <input type="number" step="0.1" name="height" id="height" class="form-control" value="{{ profile.height }}" required min="100" max="250">
+            <input type="number" step="0.1" name="height" id="height" class="form-control"
+                   value="{{ profile.height }}" required min="100" max="250"
+                   oninput="calculateBMI()">
             <div class="invalid-feedback">Введите рост в диапазоне от 100 до 250 см.</div>
         </div>
 
         <div class="mb-3">
             <label for="weight" class="form-label">Вес (кг)</label>
-            <input type="number" step="0.1" name="weight" id="weight" class="form-control" value="{{ profile.weight }}" required min="30" max="200">
+            <input type="number" step="0.1" name="weight" id="weight" class="form-control"
+                   value="{{ profile.weight }}" required min="30" max="200"
+                   oninput="calculateBMI()">
             <div class="invalid-feedback">Введите вес в диапазоне от 30 до 200 кг.</div>
+        </div>
+
+        <!-- Блок с результатами ИМТ -->
+        <div id="bmi-result" class="alert alert-info mt-3" style="display: none;">
+            <h5>Ваш ИМТ: <span id="bmi-value">0</span></h5>
+            <div id="bmi-category" class="fw-bold"></div>
+            <div id="bmi-risk" class="small mt-2"></div>
         </div>
 
         <button type="submit" class="btn btn-primary w-100">Продолжить</button>
@@ -41,10 +52,70 @@
 </div>
 
 <script>
+    // Функция расчета ИМТ
+    function calculateBMI() {
+        const heightInput = document.getElementById('height');
+        const weightInput = document.getElementById('weight');
+        const resultDiv = document.getElementById('bmi-result');
+
+        const height = parseFloat(heightInput.value) / 100; // переводим см в метры
+        const weight = parseFloat(weightInput.value);
+
+        if (height > 0 && weight > 0) {
+            const bmi = weight / (height * height);
+            displayBMI(bmi);
+            resultDiv.style.display = 'block';
+        } else {
+            resultDiv.style.display = 'none';
+        }
+    }
+
+    // Функция отображения результатов
+    function displayBMI(bmi) {
+        const bmiCategories = [
+            {min: 40, max: Infinity, category: 'Ожирение III ст.', risk: 'Подробнее в конце опроса'},
+            {min: 35, max: 39.9, category: 'Ожирение II ст.', risk: 'Подробнее в конце опроса'},
+            {min: 30, max: 34.9, category: 'Ожирение I ст.', risk: 'Подробнее в конце опроса'},
+            {min: 25, max: 29.9, category: 'Избыточная масса тела', risk: 'Подробнее в конце опроса'},
+            {min: 18.5, max: 24.9, category: 'Нормальный ИМТ', risk: 'Подробнее в конце опроса'},
+            {min: 17, max: 18.49, category: 'Недостаточность питания I ст.', risk: 'Подробнее в конце опроса'},
+            {min: 16, max: 16.9, category: 'Недостаточность питания II ст.', risk: 'Подробнее в конце опроса'},
+            {min: 0, max: 15.9, category: 'Недостаточность питания III ст.', risk: 'Подробнее в конце опроса'},
+        ];
+
+        const formattedBMI = bmi.toFixed(1);
+        document.getElementById('bmi-value').textContent = formattedBMI;
+
+        const category = bmiCategories.find(c => bmi >= c.min && bmi <= c.max);
+        document.getElementById('bmi-category').textContent = category.category;
+        document.getElementById('bmi-risk').textContent = category.risk;
+
+        // Изменение цвета в зависимости от категории
+        const colors = {
+            'Ожирение': 'danger',
+            'Избыточная': 'warning',
+            'Нормальный': 'success',
+            'Недостаточность': 'warning'
+        };
+
+        const alertClass = Object.entries(colors).find(([key]) =>
+            category.category.startsWith(key))?.[1] || 'info';
+
+        document.getElementById('bmi-result').className =
+            `alert alert-${alertClass} mt-3 animate__animated animate__fadeIn`;
+    }
+
+    // Инициализация расчета при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('height').value && document.getElementById('weight').value) {
+            calculateBMI();
+        }
+    });
+
+    // Валидация формы (оригинальный скрипт)
     (function () {
         'use strict';
         let forms = document.querySelectorAll('.needs-validation');
-
         Array.prototype.slice.call(forms).forEach(function (form) {
             form.addEventListener('submit', function (event) {
                 if (!form.checkValidity()) {
@@ -56,4 +127,10 @@
         });
     })();
 </script>
+
+<style>
+    .animate__fadeIn {
+        animation-duration: 0.5s;
+    }
+</style>
 {% endblock %}

@@ -1,0 +1,29 @@
+<!-- Детализация показателей -->
+<div class="mt-3 text-start">
+    <ul class="list-group">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Медико-биологические факторы
+            <span class="badge bg-primary rounded-pill">{{ medico_biological_avg|floatformat:2 }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Стресс
+            <span class="badge bg-primary rounded-pill">{{ stress_avg|floatformat:2 }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Питание
+            <span class="badge bg-primary rounded-pill">{{ nutrition_avg|floatformat:2 }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Пищевое поведение
+            <span class="badge bg-primary rounded-pill">{{ eating_behavior_avg|floatformat:2 }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Самооценка труда
+            <span class="badge bg-primary rounded-pill">{{ work_assessment_avg|floatformat:2 }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Образ жизни и ФАиРД
+            <span class="badge bg-primary rounded-pill">{{ lifestyle_avg|floatformat:2 }}</span>
+        </li>
+    </ul>
+</div>

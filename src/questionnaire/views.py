@@ -1,3 +1,5 @@
+import re
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.http import HttpResponseRedirect
@@ -7,173 +9,195 @@ from .utils import calculate_user_rating
 
 
 def user_profile_view(request):
-    session_key = request.session.session_key
-    if not session_key:
+    # Session handling
+    if not request.session.session_key:
         request.session.create()
-        session_key = request.session.session_key
 
-    user_profile, created = AnonymousUserProfile.objects.get_or_create(session_key=session_key)
+    # Profile handling
+    profile, created = AnonymousUserProfile.objects.get_or_create(
+        session_key=request.session.session_key
+    )
 
-    if user_profile.filled_survey:
+    if profile.filled_survey:
         return redirect('thank_you_view')
 
-    if user_profile.gender and user_profile.age and user_profile.height and user_profile.weight:
-        # Изменено здесь: используем имя маршрута для старта опроса
-        return redirect('questionnaire_start')  # <--- Исправлено
+    # Check if profile is complete
+    if all([profile.gender, profile.age, profile.height, profile.weight]):
+        return redirect('questionnaire_start')
 
+    # Profile form processing
     if request.method == 'POST':
-        user_profile.gender = request.POST.get('gender')
-        user_profile.age = request.POST.get('age')
-        user_profile.height = request.POST.get('height')
-        user_profile.weight = request.POST.get('weight')
-        user_profile.save()
-        # Изменено здесь: используем правильный маршрут
-        return redirect('questionnaire_start')  # <--- Исправлено
+        profile.gender = request.POST.get('gender')
+        profile.age = request.POST.get('age')
+        profile.height = request.POST.get('height')
+        profile.weight = request.POST.get('weight')
+        profile.save()
+        return redirect('questionnaire_start')
 
-    return render(request, 'user_profile_form.html', {'profile': user_profile})
+    return render(request, 'user_profile_form.html', {'profile': profile})
 
 
 def questionnaire_view(request, question_order=None):
-    session_key = request.session.session_key
-    if not session_key:
+    # Session and profile validation
+    if not request.session.session_key:
         return redirect('user_profile_view')
 
-    user_profile = get_object_or_404(AnonymousUserProfile, session_key=session_key)
+    profile = get_object_or_404(AnonymousUserProfile, session_key=request.session.session_key)
 
-    if user_profile.filled_survey:
+    if profile.filled_survey:
         return redirect('thank_you_view')
 
-    all_questions = Question.objects.all().order_by('order')
-    total_questions = all_questions.count()
+    # Questions setup
+    questions = Question.objects.all().order_by('order')
+    question_count = questions.count()
 
-    if not all_questions.exists() or total_questions == 0:
+    if not questions.exists():
         return redirect('thank_you_view')
 
-    answered_questions = UserResponse.objects.filter(user_profile=user_profile).values('question').distinct().count()
-    progress = int((answered_questions / total_questions) * 100) if total_questions > 0 else 0
+    # Progress calculation
+    answered = UserResponse.objects.filter(user_profile=profile).values('question').distinct().count()
+    progress = int((answered / question_count) * 100) if question_count else 0
 
+    # Current question handling
     if question_order:
         question = get_object_or_404(Question, order=question_order)
     else:
-        first_question = all_questions.first()
-        return HttpResponseRedirect(reverse('questionnaire_view', args=[first_question.order]))
+        return HttpResponseRedirect(reverse('questionnaire_view', args=[questions.first().order]))
 
+    # Answer processing
     if request.method == 'POST':
-        selected_answers_ids = request.POST.getlist('answers')
-        free_text_answer = request.POST.get('free_text', '').strip() if question.allow_free_text else ""
-        numeric_answer = request.POST.get('numeric_answer', '').strip() if question.is_numeric_input else None
         error = None
-        has_free_text = 'free_text' in selected_answers_ids
+        selected_ids = request.POST.getlist('answers')
+        free_text = request.POST.get('free_text', '').strip() if question.allow_free_text else ""
+        numeric = request.POST.get('numeric_answer', '').strip() if question.is_numeric_input else None
         selected_answers = Answer.objects.none()
+        has_free_text = question.allow_free_text and bool(free_text)
 
-        # Валидация для числовых вопросов
+        # Validation logic
         if question.is_numeric_input:
-            if not numeric_answer:
-                error = "Введите числовое значение"
+            if not numeric:
+                if question.is_required:
+                    error = "Введите числовое значение"
             else:
                 try:
-                    numeric_answer = float(numeric_answer)
-                    if numeric_answer < 0:
-                        error = "Значение не может быть отрицательным"
+                    numeric = float(numeric)
+                    # Специфичная валидация для холестерина
+                    if question.description == "ОБЩИЙ ХОЛЕСТЕРИН":
+                        if numeric and (float(numeric) < 2.0 or float(numeric) > 30.0):
+                            error = "Проверьте значение (допустимо 2.0-30.0 ммоль/л)"
+                        else:
+                            error = None
+                    else:
+                        # Общая валидация для других числовых вопросов
+                        error = "Значение не может быть отрицательным" if numeric < 0 else None
                 except ValueError:
                     error = "Введите корректное число"
         else:
-            # Валидация для обычных вопросов
-            if has_free_text:
-                if len(selected_answers_ids) > 1:
-                    error = "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
-                elif not question.allow_free_text:
-                    error = "Свободный ответ не разрешен для этого вопроса"
-                elif not free_text_answer:
-                    error = "Укажите ваш вариант ответа"
+            # Новая логика валидации для артериального давления
+            if question.description == "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ":
+                if has_free_text:
+                    if free_text.lower() in ['не знаю', 'неизвестно']:
+                        # Корректная обработка "не знаю"
+                        pass
+                    else:
+                        # Проверка формата
+                        if not re.match(r'^\d+/\d+$', free_text):
+                            error = "Введите давление в формате ЧИСЛО/ЧИСЛО (например: 120/80) или введите 'не знаю'"
+                        else:
+                            try:
+                                systolic, diastolic = map(int, free_text.split('/'))
+                                if not (50 <= systolic <= 250) or not (30 <= diastolic <= 150):
+                                    error = "Проверьте корректность значений (допустимый диапазон: 50-250/30-150)"
+                            except ValueError:
+                                error = "Некорректные значения давления"
+                elif question.is_required:
+                    error = "Введите значение артериального давления или укажите 'не знаю'"
+
+            # Общая валидация для остальных вопросов
             else:
-                selected_answers = Answer.objects.filter(id__in=selected_answers_ids)
-                if free_text_answer:
-                    error = "Уберите текст или выберите 'Свой вариант'"
-
-            if question.is_required and not error:
-                if question.is_multiple_choice:
-                    if not selected_answers.exists() and not (has_free_text and free_text_answer):
-                        error = "Выберите хотя бы один вариант" + (
-                            " или заполните поле" if question.allow_free_text else "")
+                if has_free_text:
+                    if len(selected_ids) > 1:
+                        error = "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
+                    elif not question.allow_free_text or not free_text:
+                        error = "Укажите ваш вариант ответа" if not free_text else "Свободный ответ не разрешен"
                 else:
-                    if len(selected_answers_ids) > 1:
-                        error = "Выберите только один вариант"
-                    elif not selected_answers.exists() and not (has_free_text and free_text_answer):
-                        error = "Выберите вариант" + (" или заполните поле" if question.allow_free_text else "")
+                    selected_answers = Answer.objects.filter(id__in=selected_ids)
+                    if free_text:
+                        error = "Уберите текст или выберите 'Свой вариант'"
 
+                # Required field check
+                if question.is_required and not error:
+                    min_answers = 1 if question.is_multiple_choice else 0
+                    if not selected_answers.exists() and not (has_free_text and free_text):
+                        error = "Выберите вариант" + (" или заполните поле" if question.allow_free_text else "")
+                    elif not question.is_multiple_choice and len(selected_ids) > 1:
+                        error = "Выберите только один вариант"
+
+        # Handle validation errors
         if error:
             return render(request, 'questionnaire.html', {
                 'question': question,
                 'progress': progress,
-                'answered_questions': answered_questions,
-                'question_count': total_questions,
+                'answered_questions': answered,
+                'question_count': question_count,
                 'error': error,
                 'user_response': {
                     'selected_answers': selected_answers,
-                    'free_text_answer': free_text_answer,
-                    'numeric_answer': numeric_answer
+                    'free_text_answer': free_text,
+                    'numeric_answer': numeric
                 }
             })
 
-        # Сохранение ответа
-        response, created = UserResponse.objects.update_or_create(
-            user_profile=user_profile,
+        # Save response
+        response, _ = UserResponse.objects.update_or_create(
+            user_profile=profile,
             question=question,
             defaults={
-                'free_text_answer': free_text_answer if has_free_text else '',
-                'numeric_answer': numeric_answer if question.is_numeric_input else None
+                'free_text_answer': free_text if has_free_text else '',
+                'numeric_answer': numeric if question.is_numeric_input else None
             }
         )
         if not question.is_numeric_input:
             response.selected_answers.set(selected_answers)
 
-        # Определение следующего вопроса
+        # Determine next question
         next_question = None
-
         if question.is_numeric_input or has_free_text:
-            next_question = Question.objects.filter(order__gt=question.order).order_by('order').first()
+            next_question = Question.objects.filter(order__gt=question.order).first()
         elif selected_answers.exists():
-            # Логика определения следующего вопроса через ответы
-            first_answer = selected_answers.first()
-            next_question = first_answer.next_question or Question.objects.filter(
+            next_question = selected_answers.first().next_question or Question.objects.filter(
                 order__gt=question.order
-            ).order_by('order').first()
+            ).first()
 
-        if not next_question:
-            next_question = Question.objects.filter(order__gt=question.order).order_by('order').first()
-
-        # Проверка завершения опроса
+        # Final redirects
         if next_question:
             return HttpResponseRedirect(reverse('questionnaire_view', args=[next_question.order]))
         else:
-            user_profile.filled_survey = True
-            user_profile.save()
+            profile.filled_survey = True
+            profile.save()
             return redirect('thank_you_view')
 
+    # GET request handling
     return render(request, 'questionnaire.html', {
         'question': question,
         'progress': progress,
-        'answered_questions': answered_questions,
-        'question_count': total_questions,
-        'next_question_exists': question.order < total_questions
+        'answered_questions': answered,
+        'question_count': question_count,
+        'next_question_exists': question.order < question_count
     })
 
 
 def thank_you_view(request):
-    session_key = request.session.session_key
-    if not session_key:
+    if not request.session.session_key:
         return redirect('home')
 
-    user_profile = get_object_or_404(AnonymousUserProfile, session_key=session_key)
+    profile = get_object_or_404(AnonymousUserProfile, session_key=request.session.session_key)
 
-    if not user_profile.filled_survey:
+    if not profile.filled_survey:
         return redirect('questionnaire_start')
 
-    # Получаем данные рейтинга
-    rating_data = calculate_user_rating(user_profile)
+    return render(request, 'thank_you.html', calculate_user_rating(profile))
 
-    return render(request, 'thank_you.html', rating_data)
 
 def home_view(request):
     return render(request, 'home.html')

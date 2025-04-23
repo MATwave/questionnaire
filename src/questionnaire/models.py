@@ -107,6 +107,13 @@ class Answer(models.Model):
         max_length=300,
         verbose_name='Вариант ответа'
     )
+
+    recommendation = models.TextField(
+        blank=True,
+        verbose_name='Рекомендация',
+        help_text="Текст рекомендации, который будет показан при выборе этого ответа"
+    )
+
     question = models.ForeignKey(
         Question,
         related_name='answers',
