@@ -3,137 +3,141 @@
 {% block title %}Вопрос{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm p-4">
-    <!-- Заголовок и прогрессбар -->
-    <h2 class="text-center">Опрос</h2>
+<div class="row justify-content-center">  <!-- Добавленная обертка -->
+    <div class="col-lg-8 col-xl-6">
+        <div class="card shadow-sm p-4">
+            <!-- Заголовок и прогрессбар -->
+            <h2 class="text-center">Опрос</h2>
 
-    <div class="d-flex align-items-center mb-4">
-        <div class="progress flex-grow-1" style="height: 20px;">
-            <div class="progress-bar" role="progressbar" style="width: {{ question.order }}%;"
-                 aria-valuenow="{{ question.order }}" aria-valuemin="0" aria-valuemax="{{question_count}}">
-            </div>
-        </div>
-        <span class="ms-2">{{ question.order }}/{{ question_count }}</span>
-    </div>
-
-    <!-- Текст вопроса -->
-    <h3 class="mt-4">{{ question.text }}</h3>
-
-    <!-- Форма с ответами -->
-    <form method="post" class="mt-3">
-        {% csrf_token %}
-
-        <div class="mb-3">
-            {% if question.is_numeric_input %}
-                <!-- Числовой ввод -->
-                <div class="numeric-input">
-                    <input type="number"
-                           name="numeric_answer"
-                           class="form-control"
-                           step="0.1"
-                           min="0"
-                           {% if question.is_required %}required{% endif %}
-                           value="{{ user_response.numeric_answer|default_if_none:'' }}">
-                    <div class="form-text">Пожалуйста, введите числовое значение. Если не знаете - введите 0</div>
+            <div class="d-flex align-items-center mb-4">
+                <div class="progress flex-grow-1" style="height: 20px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ question.order }}%;"
+                         aria-valuenow="{{ question.order }}" aria-valuemin="0" aria-valuemax="{{question_count}}">
+                    </div>
                 </div>
-            {% else %}
-                {% if question.is_multiple_choice %}
-                    <!-- Множественный выбор -->
-                    <p class="text-muted small mb-2">Выберите все подходящие варианты:</p>
-                    {% for answer in question.answers.all %}
-                        <div class="form-check">
-                            <label class="form-check-label w-100" for="answer{{ answer.id }}">
-                                <input class="form-check-input"
-                                    type="checkbox"
-                                    name="answers"
-                                    value="{{ answer.id }}"
-                                    id="answer{{ answer.id }}"
-                                    {% if answer in user_response.selected_answers.all %}checked{% endif %}
-                                    data-recommendation="{{ answer.recommendation|escapejs }}">
-                                {{ answer.text }}
-                                {% if answer.recommendation %}
-                                <i class="fas fa-info-circle text-primary ms-2"
-                                   style="cursor: help; font-size: 0.8em;"
-                                   title="Есть рекомендация"></i>
-                                {% endif %}
-                            </label>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <!-- Одиночный выбор с возможностью свободного ответа -->
-                    {% for answer in question.answers.all %}
-                        <div class="form-check">
-                            <label class="form-check-label w-100" for="answer{{ answer.id }}">
-                                <input class="form-check-input"
-                                    type="radio"
-                                    name="answers"
-                                    value="{{ answer.id }}"
-                                    id="answer{{ answer.id }}"
-                                    {% if answer in user_response.selected_answers.all %}checked{% endif %}
-                                    {% if question.is_required %}required{% endif %}
-                                    data-recommendation="{{ answer.recommendation|safe }}">
-                                {{ answer.text }}
-                                {% if answer.recommendation %}
-                                <i class="fas fa-info-circle text-primary ms-2"
-                                   style="cursor: help; font-size: 0.8em;"
-                                   title="Есть рекомендация"></i>
-                                {% endif %}
-                            </label>
-                        </div>
-                    {% endfor %}
+                <span class="ms-2">{{ question.order }}/{{ question_count }}</span>
+            </div>
 
-                    <!-- Радиокнопка для свободного ответа -->
-                    {% if question.allow_free_text %}
-                        <div class="form-check">
-                            <label class="form-check-label w-100" for="answer_free_text">
-                                <input class="form-check-input"
-                                    type="radio"
-                                    name="answers"
-                                    value="free_text"
-                                    id="answer_free_text"
-                                    {% if user_response.free_text_answer %}checked{% endif %}>
-                                Свой вариант
-                            </label>
-                        </div>
+            <!-- Текст вопроса -->
+            <h3 class="mt-4">{{ question.text }}</h3>
 
-                        <!-- Поле для свободного ответа -->
-                        <div class="mb-3 free-text-field" style="display: none;">
-                            <label for="free_text" class="form-label">Ваш вариант ответа:</label>
-                            <textarea id="free_text"
-                                      name="free_text"
-                                      class="form-control"
-                                      rows="3"
-                                      {% if question.is_required %}required{% endif %}
-                            >{{ user_response.free_text_answer|default:""|striptags }}</textarea>
+            <!-- Форма с ответами -->
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    {% if question.is_numeric_input %}
+                        <!-- Числовой ввод -->
+                        <div class="numeric-input">
+                            <input type="number"
+                                   name="numeric_answer"
+                                   class="form-control"
+                                   step="0.1"
+                                   min="0"
+                                   {% if question.is_required %}required{% endif %}
+                                   value="{{ user_response.numeric_answer|default_if_none:'' }}">
+                            <div class="form-text">Пожалуйста, введите числовое значение. Если не знаете - введите 0</div>
                         </div>
+                    {% else %}
+                        {% if question.is_multiple_choice %}
+                            <!-- Множественный выбор -->
+                            <p class="text-muted small mb-2">Выберите все подходящие варианты:</p>
+                            {% for answer in question.answers.all %}
+                                <div class="form-check">
+                                    <label class="form-check-label w-100" for="answer{{ answer.id }}">
+                                        <input class="form-check-input"
+                                            type="checkbox"
+                                            name="answers"
+                                            value="{{ answer.id }}"
+                                            id="answer{{ answer.id }}"
+                                            {% if answer in user_response.selected_answers.all %}checked{% endif %}
+                                            data-recommendation="{{ answer.recommendation|escapejs }}">
+                                        {{ answer.text }}
+                                        {% if answer.recommendation %}
+                                        <i class="fas fa-info-circle text-primary ms-2"
+                                           style="cursor: help; font-size: 0.8em;"
+                                           title="Есть рекомендация"></i>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Одиночный выбор с возможностью свободного ответа -->
+                            {% for answer in question.answers.all %}
+                                <div class="form-check">
+                                    <label class="form-check-label w-100" for="answer{{ answer.id }}">
+                                        <input class="form-check-input"
+                                            type="radio"
+                                            name="answers"
+                                            value="{{ answer.id }}"
+                                            id="answer{{ answer.id }}"
+                                            {% if answer in user_response.selected_answers.all %}checked{% endif %}
+                                            {% if question.is_required %}required{% endif %}
+                                            data-recommendation="{{ answer.recommendation|safe }}">
+                                        {{ answer.text }}
+                                        {% if answer.recommendation %}
+                                        <i class="fas fa-info-circle text-primary ms-2"
+                                           style="cursor: help; font-size: 0.8em;"
+                                           title="Есть рекомендация"></i>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            {% endfor %}
+
+                            <!-- Радиокнопка для свободного ответа -->
+                            {% if question.allow_free_text %}
+                                <div class="form-check">
+                                    <label class="form-check-label w-100" for="answer_free_text">
+                                        <input class="form-check-input"
+                                            type="radio"
+                                            name="answers"
+                                            value="free_text"
+                                            id="answer_free_text"
+                                            {% if user_response.free_text_answer %}checked{% endif %}>
+                                        Свой вариант
+                                    </label>
+                                </div>
+
+                                <!-- Поле для свободного ответа -->
+                                <div class="mb-3 free-text-field" style="display: none;">
+                                    <label for="free_text" class="form-label">Ваш вариант ответа:</label>
+                                    <textarea id="free_text"
+                                              name="free_text"
+                                              class="form-control"
+                                              rows="3"
+                                              {% if question.is_required %}required{% endif %}
+                                    >{{ user_response.free_text_answer|default:""|striptags }}</textarea>
+                                </div>
+                            {% endif %}
+                        {% endif %}
                     {% endif %}
+                </div>
+
+                <!-- Блок с рекомендациями -->
+                <div id="recommendations-container" class="mt-3 animate__animated animate__faster" style="display: none;">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Комментарий
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="recommendation-text" class="small" style="white-space: pre-wrap;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
-            {% endif %}
+
+                <button type="submit" class="btn btn-primary w-100 mt-3">
+                    {% if question.order < question_count %}Далее{% else %}Завершить опрос{% endif %}
+                </button>
+            </form>
         </div>
-
-        <!-- Блок с рекомендациями -->
-        <div id="recommendations-container" class="mt-3 animate__animated animate__faster" style="display: none;">
-            <div class="card border-primary">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-lightbulb me-2"></i>
-                        Комментарий
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div id="recommendation-text" class="small" style="white-space: pre-wrap;"></div>
-                </div>
-            </div>
-        </div>
-
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
-
-        <button type="submit" class="btn btn-primary w-100 mt-3">
-            {% if question.order < question_count %}Далее{% else %}Завершить опрос{% endif %}
-        </button>
-    </form>
+    </div>
 </div>
 
 <!-- Скрипты -->

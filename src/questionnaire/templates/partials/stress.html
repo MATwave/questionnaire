@@ -1,6 +1,6 @@
 <div class="card mt-4">
 <div class="card-body">
-    <h5 class="card-title">Уровень стрессоустойчивости</h5>
+    <h5 class="card-title">Уровень стрессоустойчивости </h5>
 
     <!-- Прогресс-бар -->
     <div class="progress" style="height: 30px;">
@@ -11,17 +11,17 @@
             {% else %} bg-success
             {% endif %}"
             role="progressbar"
-            style="width: {{ stress_avg|floatformat:2 }}00%"
-            aria-valuenow="{{ stress_avg }}"
+            style="width: {% widthratio stress_avg 1 100 %}%;"
+            aria-valuenow="{% widthratio stress_avg 1 100 %}"
             aria-valuemin="0"
-            aria-valuemax="1">
-
+            aria-valuemax="100">
             <span class="h5">
                 {% if stress_avg < 0.47 %} Низкий
                 {% elif stress_avg < 0.67 %} Пониженный
                 {% elif stress_avg < 0.89 %} Средний
                 {% else %} Высокий
                 {% endif %}
+                ({% widthratio stress_avg 1 100 %}%)
             </span>
         </div>
     </div>
