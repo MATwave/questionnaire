@@ -1,0 +1,149 @@
+<!-- Блок с ИМТ -->
+<div class="alert alert-secondary mt-3">
+    <h5 class="mb-2">📊 Ваш ИМТ: <span class="badge bg-info">{{ bmi }}</span></h5>
+    <div class="risk-info">
+        <p class="fw-bold mb-1">Категория: {{ bmi_category }}</p>
+        <div class="alert alert-{% if 'Ожирение' in bmi_category %}danger
+                               {% elif 'Недостаточность' in bmi_category %}warning
+                               {% else %}success{% endif %} mt-2">
+            <h6>Уровень риска: {{ bmi_risk_level }}</h6>
+            <p class="mb-0 small">{{ bmi_risk_description }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Блок с заболеваниями -->
+{% if existing_diseases != 'Нет' %}
+<div class="alert alert-warning mt-3">
+    <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
+    <ul class="list-unstyled">
+        {% for disease in existing_diseases %}
+            <li>
+                <i class="bi bi-arrow-right-short text-danger"></i>
+                {{ disease }}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Блок с талией/бедрами -->
+<div class="alert alert-info mt-3">
+    <h5 class="mb-3">📏 Антропометрические показатели</h5>
+
+    <!-- Окружность талии -->
+    <div class="mb-3">
+        <h6>Окружность талии: {{ waist|default:"не указана" }} см</h6>
+        {% if waist_status %}
+            <div class="alert alert-{% if waist_status == 'Норма' %}success{% else %}warning{% endif %}">
+                <strong>Статус:</strong> {{ waist_status }}<br>
+                {{ waist_description }}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Соотношение талия/бедро -->
+    <div class="mb-3">
+        <h6>Соотношение талия/бедро:
+            {% if waist_hip_ratio %}
+                {{ waist_hip_ratio|floatformat:2 }}
+                <small class="text-muted">
+                    (Талия: {{ waist|floatformat }} см / Бедра: {{ hip|floatformat }} см)
+                </small>
+            {% else %}
+                не рассчитано
+            {% endif %}
+        </h6>
+        {% if ratio_status %}
+            <div class="alert alert-{% if ratio_status == 'Норма' %}success{% else %}warning{% endif %}">
+                <strong>Статус:</strong> {{ ratio_status }}<br>
+                {{ ratio_description }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Блок с артериальным давлением -->
+<div class="alert alert-info mt-3">
+    <h5 class="mb-3">❤️ Артериальное давление</h5>
+
+    <div class="mb-3">
+        {% if bp_status == 'unknown' %}
+            <div class="alert alert-warning">
+                {{ bp_description }}
+            </div>
+        {% else %}
+            <h6>
+                Показатели: {{ bp_data.systolic }}/{{ bp_data.diastolic }} мм рт.ст.
+            </h6>
+            <div class="alert alert-{% if bp_status == 'high' %}danger{% elif bp_status == 'elevated' %}warning{% else %}success{% endif %}">
+                <strong>Статус:</strong>
+                {% if bp_status == 'high' %}Высокое
+                {% elif bp_status == 'elevated' %}Повышенное
+                {% else %}Нормальное{% endif %}<br>
+                {{ bp_description }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Блок с холестерином -->
+<div class="alert alert-info mt-3">
+    <h5 class="mb-3">🩸 Общий холестерин</h5>
+
+    <div class="mb-3">
+        {% if cholesterol_unknown %}
+            <div class="alert alert-warning">
+                Если Вам неизвестен Ваш уровень общего холестерина, необходимо пройти обследование
+                и изучить «липидный профиль» крови.
+            </div>
+        {% else %}
+            <h6>
+                Показатель:
+                {% if cholesterol_value %}
+                    {{ cholesterol_value|floatformat:1 }} ммоль/л
+                {% else %}
+                    Нет данных
+                {% endif %}
+            </h6>
+            {% if cholesterol_status == 'high' %}
+                <div class="alert alert-danger">
+                    <strong>Статус:</strong> Высокое значение<br>
+                    У Вас высокое значение общего холестерина (>5.5 ммоль/л).
+                    Значение ниже 5.2 ммоль/л считается нормальным для популяции с низким риском.
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    <strong>Статус:</strong> Нормальный<br>
+                    Ваш уровень холестерина в пределах референсных значений.
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Блок с глюкозой -->
+<div class="alert alert-info mt-3">
+    <h5 class="mb-3">🩸 Уровень глюкозы</h5>
+    <div class="mb-3">
+        {% if glucose_unknown or glucose_value == 0 %}
+            <div class="alert alert-warning">
+                <strong>Рекомендация:</strong><br>
+                Значение глюкозы не указано или равно 0. Необходимо сдать анализ:<br>
+                - Капиллярная кровь: ≤5.6 ммоль/л<br>
+                - Венозная кровь: ≤6.1 ммоль/л
+            </div>
+        {% else %}
+            <h6>Показатель: {{ glucose_value|floatformat:1 }} ммоль/л</h6>
+            <div class="alert
+                {% if glucose_status == 'diabetes' %}alert-danger
+                {% elif glucose_status == 'prediabetes' %}alert-warning
+                {% else %}alert-success{% endif %}">
+                <strong>Статус:</strong>
+                {% if glucose_status == 'diabetes' %}Высокий риск диабета
+                {% elif glucose_status == 'prediabetes' %}Предиабет
+                {% else %}Норма{% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
