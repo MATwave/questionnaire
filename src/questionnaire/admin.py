@@ -1,5 +1,4 @@
 import csv
-from collections import defaultdict
 
 from django.contrib import admin
 import nested_admin
@@ -7,7 +6,7 @@ from django.db.models import Prefetch
 from django.http import HttpResponse
 
 from .models import Question, Answer, UserResponse, AnonymousUserProfile
-from .utils import get_question_categories, calculate_user_rating
+from .utils import calculate_user_rating
 
 
 @admin.action(description="Экспортировать ответы в CSV")
@@ -17,11 +16,13 @@ def export_responses_csv(modeladmin, request, queryset):
 
     writer = csv.writer(response, delimiter='\t')
 
-    questions = Question.objects.order_by('order')
+    selected_question_ids = list(queryset.values_list('id', flat=True))
+    questions = Question.objects.filter(id__in=selected_question_ids).order_by('order')
+    all_questions = Question.objects.order_by('order')
 
     headers = [
         'Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)', 'ИМТ',
-        *questions.values_list('text', flat=True),
+        *all_questions.values_list('text', flat=True),
         'МБФ',
         'СТП',
         'Образ жизни и режим дня',
@@ -33,26 +34,31 @@ def export_responses_csv(modeladmin, request, queryset):
     ]
     writer.writerow(headers)
 
+    # Получаем только профили с ответами на выбранные вопросы
     user_profiles = AnonymousUserProfile.objects.filter(
-        responses__isnull=False
-    ).prefetch_related(
-        Prefetch('responses', queryset=UserResponse.objects.prefetch_related(
-            Prefetch('selected_answers', queryset=Answer.objects.only('text')),
-            Prefetch('question', queryset=Question.objects.only('description', 'is_numeric_input'))
-        ))
-    ).distinct()
+        responses__question_id__in=selected_question_ids
+    ).distinct().prefetch_related(
+        Prefetch('responses',
+                 queryset=UserResponse.objects.filter(
+                     question_id__in=selected_question_ids
+                 ).prefetch_related(
+                     Prefetch('selected_answers', queryset=Answer.objects.only('text')),
+                     'question'
+                 )
+        )
+    )
 
     for profile in user_profiles:
-        if not profile.responses.exists():
-            continue
 
         rating_data = calculate_user_rating(profile)
         first_response = profile.responses.earliest('created_at')
 
         # Расчет ИМТ
         bmi = ''
-        if profile.height and profile.weight:
+        if profile.height is not None and profile.weight is not None:
             try:
+                if profile.height == 0:
+                    raise ZeroDivisionError("Zero height")
                 height_m = profile.height / 100
                 bmi_value = profile.weight / (height_m ** 2)
                 bmi = f"{bmi_value:.1f}"
@@ -65,19 +71,18 @@ def export_responses_csv(modeladmin, request, queryset):
             profile.age or '',
             profile.height or '',
             profile.weight or '',
-            bmi,  # Добавлен ИМТ
+            bmi,
         ]
 
         question_responses = {r.question_id: r for r in profile.responses.all()}
         answers_row = []
-        for q in questions:
+        for q in all_questions:
             response_obj = question_responses.get(q.id)
             if response_obj:
                 if q.is_numeric_input:
                     answers = str(response_obj.numeric_answer or '')
                 else:
                     selected = [a.text for a in response_obj.selected_answers.all()]
-                    # Добавляем свободный текст, если он есть
                     if response_obj.free_text_answer:
                         selected.append(response_obj.free_text_answer)
                     answers = ", ".join(selected) if selected else ""
@@ -88,14 +93,14 @@ def export_responses_csv(modeladmin, request, queryset):
         row += answers_row
 
         special_columns = [
-            rating_data.get('medico_biological_avg', 0),  # МБФ
-            rating_data.get('work_assessment_avg', 0),  # СТП
-            rating_data.get('lifestyle_avg', 0),  # Образ жизни
-            rating_data.get('nutrition_avg', 0),  # Питание
-            rating_data.get('eating_behavior_avg', 0),  # Пищевое поведение
-            rating_data.get('stress_avg', 0),  # Стресс
-            rating_data.get('total_score', 0),  # ИТОГО
-            rating_data.get('rating', 'Нет оценки')  # Оценка
+            rating_data.get('medico_biological_avg', 0),
+            rating_data.get('work_assessment_avg', 0),
+            rating_data.get('lifestyle_avg', 0),
+            rating_data.get('nutrition_avg', 0),
+            rating_data.get('eating_behavior_avg', 0),
+            rating_data.get('stress_avg', 0),
+            rating_data.get('total_score', 0),
+            rating_data.get('rating', 'Нет оценки')
         ]
 
         writer.writerow(row + special_columns)

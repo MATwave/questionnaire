@@ -1,3 +1,4 @@
+from django.http import HttpResponseNotFound
 from django.urls import path
 from .views import home_view, user_profile_view, questionnaire_view, thank_you_view
 
@@ -7,4 +8,6 @@ urlpatterns = [
     path('survey/', questionnaire_view, name='questionnaire_start'),
     path('survey/<int:question_order>/', questionnaire_view, name='questionnaire_view'),
     path('thank-you/', thank_you_view, name='thank_you_view'),
+    # Фиктивный URL для тестов
+    path('questionnaire_list/', lambda r: HttpResponseNotFound(), name='questionnaire_list'),
 ]

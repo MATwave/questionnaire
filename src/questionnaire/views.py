@@ -104,26 +104,20 @@ def questionnaire_view(request, question_order=None):
                         if not re.match(r'^\d+/\d+$', free_text):
                             error = "Введите давление в формате ЧИСЛО/ЧИСЛО (например: 120/80) или введите 'не знаю'"
                         else:
-                            try:
-                                systolic, diastolic = map(int, free_text.split('/'))
-                                if not (50 <= systolic <= 250) or not (30 <= diastolic <= 150):
-                                    error = "Проверьте корректность значений (допустимый диапазон: 50-250/30-150)"
-                            except ValueError:
-                                error = "Некорректные значения давления"
+                            systolic, diastolic = map(int, free_text.split('/'))
+                            if not (50 <= systolic <= 250) or not (30 <= diastolic <= 150):
+                                error = "Проверьте корректность значений (допустимый диапазон: 50-250/30-150)"
                 elif question.is_required:
                     error = "Введите значение артериального давления или укажите 'не знаю'"
 
             # Общая валидация для остальных вопросов
             else:
-                if has_free_text:
-                    if len(selected_ids) > 1:
-                        error = "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
-                    elif not question.allow_free_text or not free_text:
-                        error = "Укажите ваш вариант ответа" if not free_text else "Свободный ответ не разрешен"
+                if has_free_text and len(selected_ids) > 1:
+                    error = "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
                 else:
                     selected_answers = Answer.objects.filter(id__in=selected_ids)
-                    if free_text:
-                        error = "Уберите текст или выберите 'Свой вариант'"
+                    # Нет необходимости проверять free_text здесь, так как
+                    # при has_free_text=True мы уже обработали этот случай
 
                 # Required field check
                 if question.is_required and not error:

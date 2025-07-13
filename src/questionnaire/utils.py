@@ -228,10 +228,15 @@ def calculate_bmi_data(user_profile):
         'risk_description': 'Данные для расчета отсутствуют'
     }
 
+    # Проверка на наличие данных и положительные значения
     if not (user_profile.height and user_profile.weight):
         return bmi_data
 
     try:
+        # Проверка на положительные значения
+        if user_profile.height <= 0 or user_profile.weight <= 0:
+            return bmi_data
+
         height_m = user_profile.height / 100
         bmi_value = user_profile.weight / (height_m ** 2)
         bmi_data['value'] = round(bmi_value, 1)
@@ -861,11 +866,6 @@ def calculate_category_averages(category_values):
         averages[f'{category}_avg'] = avg
 
     return averages
-
-
-def process_lifestyle_values(values):
-    """Обработка значений для категории lifestyle"""
-    return [min(val, 1.0) for val in values]
 
 
 def safe_average(values):

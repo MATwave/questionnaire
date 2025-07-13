@@ -70,10 +70,11 @@ class Question(models.Model):
                 self.order = last_order + 1
             else:
                 if Question.objects.filter(order=self.order).exists():
-                    raise ValidationError(
-                        {'order': 'Порядок должен быть уникальным. Существующий порядок: %(value)s',
-                         'params': {'value': self.order}}
-                    )
+                    raise ValidationError({
+                        'order': [
+                            f'Порядок должен быть уникальным. Существующий порядок: {self.order}'
+                        ]
+                    })
 
     def save(self, *args, **kwargs):
         # Автоматическое назначение порядка при создании
