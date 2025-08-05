@@ -125,8 +125,6 @@ class UtilsTest(TransactionTestCase):
                          "превышение капиллярной нормы (>5.6 ммоль/л), превышение венозной нормы (>6.1 ммоль/л)")
 
     def test_response_category_mapping(self):
-        categories = get_question_categories()
-
         # Создаем тестовый объект UserResponse с привязанным Question
         q = Question.objects.create(
             text="ПИТАНИЕ question",
@@ -138,7 +136,8 @@ class UtilsTest(TransactionTestCase):
             question=q
         )
 
-        self.assertEqual(get_response_category(response, categories), 'nutrition')
+        # Убрали второй аргумент (categories)
+        self.assertEqual(get_response_category(response), 'nutrition')
 
         # Тест для несуществующей категории
         q2 = Question.objects.create(
@@ -150,7 +149,7 @@ class UtilsTest(TransactionTestCase):
             user_profile=self.profile,
             question=q2
         )
-        self.assertIsNone(get_response_category(response2, categories))
+        self.assertIsNone(get_response_category(response2))
 
     def test_safe_average(self):
         self.assertEqual(safe_average([1, 2, 3]), 2.0)
@@ -217,9 +216,9 @@ class UtilsTest(TransactionTestCase):
         rating_data = calculate_user_rating(profile)
 
         # Проверяем обработку
-        self.assertEqual(rating_data['waist'], 105)
-        self.assertEqual(rating_data['waist_status'], "Высокое значение")
-        self.assertIn("высокий риск", rating_data['waist_description'])
+        self.assertEqual(rating_data.get('waist'), 105)
+        self.assertEqual(rating_data.get('waist_status'), "Высокое значение")
+        self.assertIn("высокий риск", rating_data.get('waist_description', ""))
 
     def test_smoking_processing(self):
         # Создаем вопросы о курении
@@ -234,6 +233,7 @@ class UtilsTest(TransactionTestCase):
                 description=desc,
                 is_numeric_input=True
             )
+            # Для числовых вопросов создаем ответ без выбора вариантов
             UserResponse.objects.create(
                 user_profile=self.profile,
                 question=q,
@@ -242,7 +242,11 @@ class UtilsTest(TransactionTestCase):
 
         # Пересчитываем рейтинг
         rating_data = calculate_user_rating(self.profile)
+
+        # Проверяем результаты
+        self.assertIsNotNone(rating_data['smoking_index'], "Smoking index should not be None")
         self.assertAlmostEqual(rating_data['smoking_index'], 2.5)
+        self.assertTrue(rating_data['smoking_alert'])
 
     def test_medico_biological_factors(self):
         # Исправленная структура данных для медицинских вопросов
@@ -276,11 +280,11 @@ class UtilsTest(TransactionTestCase):
         rating_data = calculate_user_rating(self.profile)
 
         # Проверяем медицинские показатели
-        self.assertEqual(rating_data['waist'], 95)
-        self.assertAlmostEqual(rating_data['waist_hip_ratio'], 0.95)
-        self.assertEqual(rating_data['bp_status'], 'normal')
-        self.assertEqual(rating_data['cholesterol_value'], 5.0)
-        self.assertEqual(rating_data['glucose_value'], 5.0)
+        self.assertEqual(rating_data.get('waist'), 95)
+        self.assertAlmostEqual(rating_data.get('waist_hip_ratio'), 0.95)
+        self.assertEqual(rating_data.get('bp_status'), 'normal')
+        self.assertEqual(rating_data.get('cholesterol_value'), 5.0)
+        self.assertEqual(rating_data.get('glucose_value'), 5.0)
         self.assertIn("Диабет", rating_data['existing_diseases'])
 
     def test_edge_cases(self):
