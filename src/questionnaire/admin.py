@@ -11,101 +11,147 @@ from .utils import calculate_user_rating
 
 @admin.action(description="Экспортировать ответы в CSV")
 def export_responses_csv(modeladmin, request, queryset):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="responses.csv"'
-
+    # Инициализация HTTP-ответа с CSV
+    response = _create_csv_response()
     writer = csv.writer(response, delimiter='\t')
 
+    # Получение данных вопросов
     selected_question_ids = list(queryset.values_list('id', flat=True))
-    questions = Question.objects.filter(id__in=selected_question_ids).order_by('order')
-    all_questions = Question.objects.order_by('order')
+    questions, all_questions = _get_questions_data(selected_question_ids)
 
-    headers = [
-        'Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)', 'ИМТ',
-        *all_questions.values_list('text', flat=True),
-        'МБФ',
-        'СТП',
-        'Образ жизни и режим дня',
-        'Питание',
-        'Пищевое поведение',
-        'Стресс',
-        'ИТОГО',
-        'Оценка соответствия'
-    ]
+    # Формирование заголовков CSV
+    headers = _generate_csv_headers(all_questions)
     writer.writerow(headers)
 
-    # Получаем только профили с ответами на выбранные вопросы
-    user_profiles = AnonymousUserProfile.objects.filter(
-        responses__question_id__in=selected_question_ids
+    # Получение профилей пользователей с ответами
+    user_profiles = _get_user_profiles_with_responses(selected_question_ids)
+
+    # Запись данных по каждому профилю
+    for profile in user_profiles:
+        row = _build_profile_row(profile, all_questions)
+        writer.writerow(row)
+
+    return response
+
+
+def _create_csv_response():
+    """Создает HTTP-ответ с настройками для CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="responses.csv"'
+    return response
+
+
+def _get_questions_data(selected_ids):
+    """Возвращает отобранные и все вопросы, упорядоченные по порядку"""
+    questions = Question.objects.filter(id__in=selected_ids).order_by('order')
+    all_questions = Question.objects.order_by('order')
+    return questions, all_questions
+
+
+def _generate_csv_headers(all_questions):
+    """Генерирует заголовки для CSV файла"""
+    base_headers = [
+        'Отметка времени', 'Пол', 'Возраст', 'Рост (см)', 'Вес (кг)', 'ИМТ'
+    ]
+    question_headers = list(all_questions.values_list('text', flat=True))
+    special_headers = [
+        'МБФ', 'СТП', 'Образ жизни и режим дня', 'Питание',
+        'Пищевое поведение', 'Стресс', 'ИТОГО', 'Оценка соответствия'
+    ]
+    return base_headers + question_headers + special_headers
+
+
+def _get_user_profiles_with_responses(question_ids):
+    """Получает профили пользователей с предзагруженными ответами на вопросы"""
+    return AnonymousUserProfile.objects.filter(
+        responses__question_id__in=question_ids
     ).distinct().prefetch_related(
         Prefetch('responses',
                  queryset=UserResponse.objects.filter(
-                     question_id__in=selected_question_ids
-                 ).prefetch_related(
-                     Prefetch('selected_answers', queryset=Answer.objects.only('text')),
-                     'question'
+                     question_id__in=question_ids
+                     ).prefetch_related(
+                         Prefetch('selected_answers', queryset=Answer.objects.only('text')),
+                         'question'
+                     )
                  )
-        )
     )
 
-    for profile in user_profiles:
 
-        rating_data = calculate_user_rating(profile)
-        first_response = profile.responses.earliest('created_at')
+def _calculate_bmi(profile):
+    """Рассчитывает ИМТ на основе данных профиля"""
+    # TODO: Вынести расчет ИМТ в метод модели или утилитарную функцию
+    if profile.height is None or profile.weight is None:
+        return ''
 
-        # Расчет ИМТ
-        bmi = ''
-        if profile.height is not None and profile.weight is not None:
-            try:
-                if profile.height == 0:
-                    raise ZeroDivisionError("Zero height")
-                height_m = profile.height / 100
-                bmi_value = profile.weight / (height_m ** 2)
-                bmi = f"{bmi_value:.1f}"
-            except ZeroDivisionError:
-                bmi = 'Ошибка расчета'
+    try:
+        if profile.height == 0:
+            raise ZeroDivisionError("Рост не может быть 0")
+        height_m = profile.height / 100
+        bmi_value = profile.weight / (height_m ** 2)
+        return f"{bmi_value:.1f}"
+    except ZeroDivisionError:
+        return 'Ошибка расчета'
 
-        row = [
-            first_response.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            profile.get_gender_display() if profile.gender else '',
-            profile.age or '',
-            profile.height or '',
-            profile.weight or '',
-            bmi,
-        ]
 
-        question_responses = {r.question_id: r for r in profile.responses.all()}
-        answers_row = []
-        for q in all_questions:
-            response_obj = question_responses.get(q.id)
-            if response_obj:
-                if q.is_numeric_input:
-                    answers = str(response_obj.numeric_answer or '')
-                else:
-                    selected = [a.text for a in response_obj.selected_answers.all()]
-                    if response_obj.free_text_answer:
-                        selected.append(response_obj.free_text_answer)
-                    answers = ", ".join(selected) if selected else ""
-            else:
-                answers = "Нет ответа"
-            answers_row.append(answers)
+def _build_profile_row(profile, all_questions):
+    """Формирует строку данных для профиля пользователя"""
+    # Базовые данные профиля
+    first_response = profile.responses.earliest('created_at')
+    base_data = [
+        first_response.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        profile.get_gender_display() if profile.gender else '',
+        profile.age or '',
+        profile.height or '',
+        profile.weight or '',
+        _calculate_bmi(profile),
+    ]
 
-        row += answers_row
+    # Данные ответов на вопросы
+    responses_data = _get_responses_data(profile, all_questions)
 
-        special_columns = [
-            rating_data.get('medico_biological_avg', 0),
-            rating_data.get('work_assessment_avg', 0),
-            rating_data.get('lifestyle_avg', 0),
-            rating_data.get('nutrition_avg', 0),
-            rating_data.get('eating_behavior_avg', 0),
-            rating_data.get('stress_avg', 0),
-            rating_data.get('total_score', 0),
-            rating_data.get('rating', 'Нет оценки')
-        ]
+    # Специальные рейтинговые данные
+    rating_data = calculate_user_rating(profile)
+    rating_columns = [
+        rating_data.get('medico_biological_avg', 0),
+        rating_data.get('work_assessment_avg', 0),
+        rating_data.get('lifestyle_avg', 0),
+        rating_data.get('nutrition_avg', 0),
+        rating_data.get('eating_behavior_avg', 0),
+        rating_data.get('stress_avg', 0),
+        rating_data.get('total_score', 0),
+        rating_data.get('rating', 'Нет оценки')
+    ]
 
-        writer.writerow(row + special_columns)
+    return base_data + responses_data + rating_columns
 
-    return response
+
+def _get_responses_data(profile, all_questions):
+    """Извлекает данные ответов для всех вопросов"""
+    # TODO: Рассмотреть оптимизацию через кеширование question_responses
+    question_responses = {r.question_id: r for r in profile.responses.all()}
+    responses_data = []
+
+    for question in all_questions:
+        response_obj = question_responses.get(question.id)
+        responses_data.append(_format_response_value(response_obj, question))
+
+    return responses_data
+
+
+def _format_response_value(response_obj, question):
+    """Форматирует значение ответа в читаемую строку"""
+    if not response_obj:
+        return "Нет ответа"
+
+    if question.is_numeric_input:
+        return str(response_obj.numeric_answer or '')
+
+    # Текстовые/выборные ответы
+    selected = [a.text for a in response_obj.selected_answers.all()]
+    if response_obj.free_text_answer:
+        selected.append(response_obj.free_text_answer)
+
+    return ", ".join(selected) if selected else ""
 
 
 class AnswerInline(nested_admin.NestedStackedInline):
