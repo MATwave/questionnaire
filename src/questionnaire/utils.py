@@ -812,7 +812,7 @@ def post_process_data(data, bmi_data, user_profile):
     }
 
     # Анализ пищевых привычек
-    data['has_food_reward_issues'] = any(v in {0, 0.5, 0.79} for v in data['food_reward_values'])
+    data['has_food_reward_issues'] = any(v in {0, 0.5} for v in data['food_reward_values'])
     data['has_snack_issues'] = any(v in {0, 0.5, 0.79} for v in data['snack_values'])
 
     # Анализ фаст-фуда

@@ -113,10 +113,13 @@ def _calculate_progress(profile, question_count):
 
 def _get_current_question(question_order, questions):
     """Получает текущий вопрос по порядковому номеру"""
+    """Получает текущий вопрос по порядковому номеру"""
     if question_order:
         try:
-            return Question.objects.get(order=question_order)
-        except Question.DoesNotExist:
+            # Защита от некорректных значений
+            order = int(question_order)
+            return Question.objects.get(order=order)
+        except (Question.DoesNotExist, ValueError):
             return None
     return None
 
@@ -185,7 +188,7 @@ def _validate_numeric_input(question, numeric):
 
         # Специфичная проверка для холестерина
         if question.description == "ОБЩИЙ ХОЛЕСТЕРИН":
-            if not (2.0 <= numeric_value <= 30.0):
+            if numeric_value > 0 and not (2.0 <= numeric_value <= 30.0):
                 return "Проверьте значение (допустимо 2.0-30.0 ммоль/л)"
 
         # Общая проверка для отрицательных значений
@@ -226,11 +229,14 @@ def _validate_blood_pressure(free_text, question):
 
 def _validate_general_question(question, selected_ids, free_text):
     """Валидация для общих вопросов"""
-    has_free_text = question.allow_free_text and bool(free_text)
-    selected_answers = Answer.objects.filter(id__in=selected_ids)
+    # Удаляем 'free_text' из списка выбранных ответов для валидации
+    clean_ids = [aid for aid in selected_ids if aid != 'free_text']
+    has_free_text = question.allow_free_text and bool(free_text) and 'free_text' in selected_ids
+
+    selected_answers = Answer.objects.filter(id__in=clean_ids)
 
     # Проверка комбинации "Свой вариант" + другие ответы
-    if has_free_text and len(selected_ids) > 1:
+    if has_free_text and len(clean_ids) > 0:
         return "Нельзя выбирать другие варианты вместе с 'Свой вариант'"
 
     # Проверка обязательности вопроса
@@ -243,7 +249,7 @@ def _validate_general_question(question, selected_ids, free_text):
                 error_msg += " или заполните поле"
             return error_msg
 
-        if not question.is_multiple_choice and len(selected_ids) > 1:
+        if not question.is_multiple_choice and len(clean_ids) > 1:
             return "Выберите только один вариант"
 
     return None
@@ -274,7 +280,9 @@ def _render_question_error(request, question, progress, answered, question_count
 
 def _save_user_response(profile, question, selected_ids, free_text, numeric):
     """Сохраняет ответ пользователя в базу данных"""
-    # TODO: Рассмотреть оптимизацию через bulk_update
+    # Фильтруем 'free_text' перед сохранением
+    valid_ids = [aid for aid in selected_ids if aid != 'free_text' and aid.isdigit()]
+
     response, _ = UserResponse.objects.update_or_create(
         user_profile=profile,
         question=question,
@@ -285,7 +293,7 @@ def _save_user_response(profile, question, selected_ids, free_text, numeric):
     )
 
     if not question.is_numeric_input:
-        response.selected_answers.set(selected_ids)
+        response.selected_answers.set(valid_ids)
 
 
 def _determine_next_question(question, selected_ids, free_text, numeric):
