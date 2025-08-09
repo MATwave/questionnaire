@@ -1,20 +1,69 @@
-# questionnarie
+# Опросник здоровья
 
-тест (но надо убедится что миграции произведены)
+Django-приложение для оценки состояния здоровья пользователя через анкетирование.
 
-```bash
-python manage.py test questionnaire.tests -v 2
-```
+## Особенности проекта
 
-покрытие
+- Современный стек: Django 4.2, PostgreSQL, Poetry
+- Полностью контейнеризованная среда разработки
+- Автоматизированные тесты и анализ покрытия кода
+- Готовые фикстуры для быстрого старта
+
+## Технический стек
+
+- **Бэкенд**: Django 4.2
+- **База данных**: PostgreSQL
+- **Управление зависимостями**: Poetry
+- **Контейнеризация**: Docker Compose
+- **Тестирование**: встроенный тестовый фреймворк Django + Coverage
+
+## Быстрый старт
+
+### Предварительные требования
+
+- Docker и Docker Compose
+- Make (опционально, но рекомендуется)
+
+### Запуск с помощью Docker Compose
+
+1. Клонируйте репозиторий:
+   ```bash
+   git clone https://github.com/your-username/questionnaire.git
+   cd questionnaire/src
+   ```
+
+2. Запустите инициализацию проекта:
+   ```bash
+   make docker-init
+   ```
+   Приложение будет доступно по адресу: http://localhost:8000
+
+Основные команды Makefile
 ```bash
-coverage run --source='questionnaire' manage.py test questionnaire
-```
-отчет краткий
-```bash
-coverage report
-```
-отчет подробный
-```bash
-coverage html
+# Запуск проекта (сборка + инициализация БД)
+make docker-init
+
+# Запуск контейнеров
+make docker-up
+
+# Остановка контейнеров
+make docker-down
+
+# Пересборка Docker образов
+make docker-build
+
+# Запуск тестов
+make test
+
+# Запуск тестов с отчетом о покрытии
+make coverage
+
+# Генерация HTML отчета о покрытии
+make coverage-html
+
+# Применение миграций
+make migrate
+
+# Загрузка тестовых данных
+make loaddata
 ```

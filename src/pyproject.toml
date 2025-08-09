@@ -10,6 +10,9 @@ python = "^3.12"
 django = "^5.1.7"
 django-nested-admin = "^4.1.1"
 coverage = "^7.9.2"
+sentry-sdk = "^2.34.1"
+psycopg2-binary = "^2.9.10"
+requests = "^2.32.4"
 
 
 [build-system]
