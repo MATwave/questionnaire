@@ -98,7 +98,7 @@ def _build_profile_row(profile, all_questions):
     # Базовые данные профиля
     first_response = profile.responses.earliest('created_at')
     base_data = [
-        first_response.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        first_response.created_at.strftime('%Y-%m-%d'),
         profile.get_gender_display() if profile.gender else '',
         profile.age or '',
         profile.height or '',
