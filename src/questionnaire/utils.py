@@ -62,26 +62,16 @@ def get_question_categories():
 # Категории ИМТ и связанные с ними риски
 BMI_CATEGORIES = [
     {
-        'min': 40.0, 'max': None, 'name': "Ожирение III ст.",
-        'risk_level': "Крайне высокий риск заболеваний",
-        'description': (
-            "У вас наблюдается высокий риск заболеваний, связанных с повышенным питанием "
-            "(сердечно-сосудистой системы - артериальной гипертензии, эндокринной системы - "
-            "сахарного диабета, пищеварительной системы - желчно-каменной болезни, "
-            "опорно-двигательного аппарата, онкологических заболеваний)"
-        ),
-        'matches': lambda x: x >= 40.0
+        'min': 18.5, 'max': 24.9, 'name': "Нормальный ИМТ",
+        'risk_level': "Риск снижен",
+        'description': "Риск сопутствующих заболеваний снижен",
+        'matches': lambda x: 18.5 <= x <= 24.9
     },
     {
-        'min': 35.0, 'max': 39.9, 'name': "Ожирение II ст.",
-        'risk_level': "Очень высокий риск заболеваний",
-        'description': (
-            "У вас наблюдается высокий риск заболеваний, связанных с повышенным питанием "
-            "(сердечно-сосудистой системы - артериальной гипертензии, эндокринной системы - "
-            "сахарного диабета, пищеварительной системы - желчно-каменной болезни, "
-            "опорно-двигательного аппарата, онкологических заболеваний)"
-        ),
-        'matches': lambda x: 35.0 <= x <= 39.9
+        'min': 25.0, 'max': 29.9, 'name': "Избыточная масса тела",
+        'risk_level': "Повышенный риск заболеваний",
+        'description': "у вас повышен риск развития заболеваний, связанных с избыточным питанием",
+        'matches': lambda x: 25.0 <= x <= 29.9
     },
     {
         'min': 30.0, 'max': 34.9, 'name': "Ожирение I ст.",
@@ -95,16 +85,26 @@ BMI_CATEGORIES = [
         'matches': lambda x: 30.0 <= x <= 34.9
     },
     {
-        'min': 25.0, 'max': 29.9, 'name': "Избыточная масса тела",
-        'risk_level': "Повышенный риск заболеваний",
-        'description': "у вас повышен риск развития заболеваний, связанных с избыточным питанием",
-        'matches': lambda x: 25.0 <= x <= 29.9
+        'min': 35.0, 'max': 39.9, 'name': "Ожирение II ст.",
+        'risk_level': "Очень высокий риск заболеваний",
+        'description': (
+            "У вас наблюдается высокий риск заболеваний, связанных с повышенным питанием "
+            "(сердечно-сосудистой системы - артериальной гипертензии, эндокринной системы - "
+            "сахарного диабета, пищеварительной системы - желчно-каменной болезни, "
+            "опорно-двигательного аппарата, онкологических заболеваний)"
+        ),
+        'matches': lambda x: 35.0 <= x <= 39.9
     },
     {
-        'min': 18.5, 'max': 24.9, 'name': "Нормальный ИМТ",
-        'risk_level': "Риск снижен",
-        'description': "Риск сопутствующих заболеваний снижен",
-        'matches': lambda x: 18.5 <= x <= 24.9
+        'min': 40.0, 'max': None, 'name': "Ожирение III ст.",
+        'risk_level': "Крайне высокий риск заболеваний",
+        'description': (
+            "У вас наблюдается высокий риск заболеваний, связанных с повышенным питанием "
+            "(сердечно-сосудистой системы - артериальной гипертензии, эндокринной системы - "
+            "сахарного диабета, пищеварительной системы - желчно-каменной болезни, "
+            "опорно-двигательного аппарата, онкологических заболеваний)"
+        ),
+        'matches': lambda x: x >= 40.0
     },
     {
         'min': 17.0, 'max': 18.49, 'name': "Недостаточность питания I ст.",
@@ -143,9 +143,9 @@ def get_bmi_categories():
 # Словари для преобразования значений
 BMI_SCORE_MAP = {
     "Нормальный ИМТ": 1.0,
-    "Избыточная масса тела": 0.5,
-    "Ожирение I ст.": 0.3,
-    "Ожирение II ст.": 0.1,
+    "Избыточная масса тела": 0.0,
+    "Ожирение I ст.": 0.0,
+    "Ожирение II ст.": 0.0,
     "Ожирение III ст.": 0.0
 }
 
@@ -249,10 +249,7 @@ def process_responses(responses, bmi_data, user_profile):
     data = {
         'category_values': {key: [] for key in QUESTION_CATEGORIES},
 
-        # Данные о курении
-        'smoking_data': {'cigarettes': 0, 'years': 0},
-
-        # Данные о заболеваниях
+        # Данные об имеющихся неинфекционных заболеваниях
         'diseases': [],
 
         # Антропометрические измерения
@@ -262,6 +259,9 @@ def process_responses(responses, bmi_data, user_profile):
         'bp_data': {'systolic': None, 'diastolic': None, 'unknown': False},
         'cholesterol_data': {'value': None, 'unknown': False},
         'glucose_data': {'value': None, 'unknown': False},
+
+        # Данные о курении
+        'smoking_data': {'cigarettes': 0, 'years': 0},
 
         # Категория "Образ жизни"
         'physical_activity_values': [],
@@ -598,16 +598,19 @@ def handle_waist_measurement(response, data, user_profile):
     if 50 <= waist_value <= 200:  # Валидация
         # Расчет балла за талию
         if user_profile.gender == 'M':
-            waist_score = 1.0 if waist_value <= 94 else (0.5 if waist_value <= 102 else 0.0)
+            waist_score = 1.0 if waist_value <= 94 else 0.0
         else:
-            waist_score = 1.0 if waist_value <= 80 else (0.5 if waist_value <= 88 else 0.0)
+            waist_score = 1.0 if waist_value <= 80 else 0.0
 
         data['category_values']['medico_biological'].append(waist_score)
         data['waist_hip_data']['waist'] = waist_value
 
 
 def handle_hip_measurement(response, data):
-    """Обрабатывает измерение окружности бедер"""
+    """Обрабатывает измерение окружности бедер
+
+    оценка дается в post_process_data так, как там нам нужно знать значение waist
+    """
     if response.numeric_answer is None:
         return
 
@@ -621,11 +624,13 @@ def handle_cholesterol(response, data):
     if response.numeric_answer is not None:
         try:
             value = float(response.numeric_answer)
-            data['cholesterol_data']['value'] = value
-            data['cholesterol_data']['unknown'] = False
+            if value == 0.0:
+                data['cholesterol_data'].update({'unknown': True, 'value': None})
+            else:
+                data['cholesterol_data'].update({'unknown': False, 'value': value})
 
             # Добавление балла в категорию
-            cholesterol_score = 1.0 if value <= 5.5 else 0.0
+            cholesterol_score = 1.0 if 0 < value <= 5.5 else 0.0
             data['category_values']['medico_biological'].append(cholesterol_score)
         except (ValueError, TypeError):
             data['cholesterol_data']['unknown'] = True
@@ -634,7 +639,10 @@ def handle_cholesterol(response, data):
 
 
 def handle_glucose(response, data):
-    """Обрабатывает ответ на вопрос об уровне глюкозы"""
+    """Обрабатывает ответ на вопрос об уровне глюкозы
+
+    балл добавляется в post_process_data
+    """
     if response.numeric_answer is not None:
         try:
             value = float(response.numeric_answer)
@@ -649,7 +657,7 @@ def handle_glucose(response, data):
 
 
 def handle_diseases(response, data):
-    """Обрабатывает ответ о заболеваниях"""
+    """Обрабатывает ответ об имеющихся неинфекционных заболеваниях"""
     data['diseases'].extend([a.text for a in response.selected_answers.all()])
     if response.free_text_answer:
         data['diseases'].append(response.free_text_answer)
@@ -720,7 +728,7 @@ def post_process_data(data, bmi_data, user_profile):
 
     # Добавление балла артериального давления
     bp_status = get_bp_status(data['bp_data'])
-    bp_score = 1.0 if bp_status == 'normal' else (0.5 if bp_status == 'elevated' else 0.0)
+    bp_score = 1.0 if bp_status == 'normal' else 0.0
     data['category_values']['medico_biological'].append(bp_score)
 
     # Добавление балла глюкозы
@@ -729,7 +737,7 @@ def post_process_data(data, bmi_data, user_profile):
         if value > 6.1:
             data['category_values']['medico_biological'].append(0.0)
         elif value > 5.6:
-            data['category_values']['medico_biological'].append(0.5)
+            data['category_values']['medico_biological'].append(0.0)
         else:
             data['category_values']['medico_biological'].append(1.0)
     else:
