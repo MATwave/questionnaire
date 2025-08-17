@@ -11,11 +11,11 @@
 
             <div class="d-flex align-items-center mb-4">
                 <div class="progress flex-grow-1" style="height: 20px;">
-                    <div class="progress-bar" role="progressbar" style="width: {{ progress }}%;"
-                         aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" role="progressbar" style="width: {{ question.order }}%;"
+                         aria-valuenow="{{ question.order }}" aria-valuemin="0" aria-valuemax="{{question_count}}">
                     </div>
                 </div>
-                <span class="ms-2">{{ answered }}/{{ question_count }}</span>
+                <span class="ms-2">{{ question.order }}/{{ question_count }}</span>
             </div>
 
             <!-- Текст вопроса -->
@@ -135,8 +135,8 @@
                 <!-- Кнопки навигации -->
                 <div class="d-flex justify-content-between mt-3">
                     <!-- Кнопка "Назад" -->
-                    {% if question.order > 1 %}
-                        <a href="{% url 'questionnaire_view' question.order|add:'-1' %}" class="btn btn-secondary">
+                    {% if previous_question %}
+                        <a href="{% url 'questionnaire_view' previous_question.order %}" class="btn btn-secondary">
                             Назад
                         </a>
                     {% else %}

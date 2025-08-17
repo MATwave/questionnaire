@@ -79,6 +79,9 @@ def questionnaire_view(request, question_order=None):
     if not question:
         return HttpResponseRedirect(reverse('questionnaire_view', args=[questions.first().order]))
 
+    # Получаем предыдущий отвеченный вопрос
+    previous_answered_question = _get_previous_answered_question(profile, question)
+
     # Обработка ответа
     if request.method == 'POST':
         return _handle_question_post(request, profile, question, progress, answered, question_count)
@@ -86,6 +89,7 @@ def questionnaire_view(request, question_order=None):
     # GET-запрос: отображение вопроса
     return render(request, 'questionnaire.html', {
         'question': question,
+        'previous_question': previous_answered_question,
         'progress': progress,
         'answered_questions': answered,
         'question_count': question_count,
@@ -136,7 +140,7 @@ def _handle_question_post(request, profile, question, progress, answered, questi
 
     if error:
         return _render_question_error(
-            request, question, progress, answered, question_count,
+            request, profile, question, progress, answered, question_count,
             selected_ids, free_text, numeric, error
         )
 
@@ -255,10 +259,13 @@ def _validate_general_question(question, selected_ids, free_text):
     return None
 
 
-def _render_question_error(request, question, progress, answered, question_count, selected_ids, free_text, numeric,
+def _render_question_error(request, profile, question, progress, answered, question_count, selected_ids, free_text, numeric,
                            error):
     """Рендерит страницу вопроса с ошибкой валидации"""
     # TODO: Оптимизировать запрос selected_answers
+
+    previous_answered_question = _get_previous_answered_question(profile, question)
+
     try:
         selected_answers = Answer.objects.filter(id__in=selected_ids)
     except (ValueError, TypeError):
@@ -266,6 +273,7 @@ def _render_question_error(request, question, progress, answered, question_count
 
     return render(request, 'questionnaire.html', {
         'question': question,
+        'previous_question': previous_answered_question,
         'progress': progress,
         'answered_questions': answered,
         'question_count': question_count,
@@ -330,6 +338,20 @@ def thank_you_view(request):
     # Расчет и отображение рейтинга
     rating_data = calculate_user_rating(profile)
     return render(request, 'thank_you.html', rating_data)
+
+def _get_previous_answered_question(profile, current_question):
+    """Возвращает предыдущий отвеченный вопрос относительно текущего"""
+    # Получаем все отвеченные вопросы пользователя до текущего
+    answered_questions = UserResponse.objects.filter(
+        user_profile=profile,
+        question__order__lt=current_question.order
+    ).order_by('-question__order').values_list('question', flat=True)
+
+    if not answered_questions:
+        return None
+
+    # Берем ближайший к текущему вопросу
+    return Question.objects.get(id=answered_questions[0])
 
 
 def home_view(request):
