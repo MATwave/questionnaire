@@ -27,6 +27,8 @@ SECRET_KEY = 'django-insecure-h^!iuns7vwbqwh57=z4bv!1@+mkm-h=(_#ct(acb9p48kto3&z
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ["https://netmac.duckdns.org", "http://localhost:8001"]
+
 
 
 # Application definition
@@ -77,23 +79,23 @@ WSGI_APPLICATION = 'survey.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
 #DATABASES = {
 #    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': os.getenv('POSTGRES_DB', 'questionnaire'),
-#        'USER': os.getenv('POSTGRES_USER', 'questionnaire'),
-#        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'questionnaire'),
-#        'HOST': os.getenv('POSTGRES_HOST', 'db'),
-#        'PORT': os.getenv('POSTGRES_PORT', 5432),
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
 #}
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'questionnaire'),
+        'USER': os.getenv('POSTGRES_USER', 'questionnaire'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'questionnaire'),
+        'HOST': os.getenv('POSTGRES_HOST', 'db'),
+        'PORT': os.getenv('POSTGRES_PORT', 5432),
+    }
+}
 
 
 # Password validation
@@ -139,4 +141,4 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
-DJANGO_PORT = os.getenv('DJANGO_PORT', '8000')
+DJANGO_PORT = os.getenv('DJANGO_PORT', '8001')
