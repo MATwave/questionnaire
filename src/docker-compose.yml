@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: questionnaire
+      POSTGRES_USER: questionnaire
+      POSTGRES_PASSWORD: questionnaire
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U questionnaire" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py wait_for_db && 
+      python manage.py collectstatic --noinput && 
+      python manage.py migrate && 
+      python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: questionnaire
+      POSTGRES_USER: questionnaire
+      POSTGRES_PASSWORD: questionnaire
+      DEBUG: 1  # Только для разработки!
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

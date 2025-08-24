@@ -3,7 +3,7 @@
 {% block title %}Вопрос{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">  <!-- Добавленная обертка -->
+<div class="row justify-content-center">
     <div class="col-lg-8 col-xl-6">
         <div class="card shadow-sm p-4">
             <!-- Заголовок и прогрессбар -->
@@ -32,7 +32,7 @@
                             <input type="number"
                                    name="numeric_answer"
                                    class="form-control"
-                                   step="0.1"
+                                   step="0.01"
                                    min="0"
                                    {% if question.is_required %}required{% endif %}
                                    value="{{ user_response.numeric_answer|default_if_none:'' }}">
@@ -132,9 +132,22 @@
                     <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
 
-                <button type="submit" class="btn btn-primary w-100 mt-3">
-                    {% if question.order < question_count %}Далее{% else %}Завершить опрос{% endif %}
-                </button>
+                <!-- Кнопки навигации -->
+                <div class="d-flex justify-content-between mt-3">
+                    <!-- Кнопка "Назад" -->
+                    {% if previous_question %}
+                        <a href="{% url 'questionnaire_view' previous_question.order %}" class="btn btn-secondary">
+                            Назад
+                        </a>
+                    {% else %}
+                        <div></div> <!-- Пустой элемент для выравнивания -->
+                    {% endif %}
+
+                    <!-- Кнопка "Далее/Завершить" -->
+                    <button type="submit" class="btn btn-primary">
+                        {% if question.order < question_count %}Далее{% else %}Завершить опрос{% endif %}
+                    </button>
+                </div>
             </form>
         </div>
     </div>
