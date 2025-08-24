@@ -24,7 +24,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-h^!iuns7vwbqwh57=z4bv!1@+mkm-h=(_#ct(acb9p48kto3&z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', False)
+def str_to_bool(value):
+    if isinstance(value, bool):
+        return value
+    if value.lower() in ('true', '1', 't', 'y', 'yes'):
+        return True
+    elif value.lower() in ('false', '0', 'f', 'n', 'no'):
+        return False
+    else:
+        raise ValueError(f"Boolean value expected: {value}")
+
+DEBUG = str_to_bool(os.getenv('DEBUG', 'False'))
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = ["https://netmac.duckdns.org", "http://localhost:8001"]
