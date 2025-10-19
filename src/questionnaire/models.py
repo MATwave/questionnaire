@@ -235,3 +235,38 @@ class UserResponse(models.Model):
     def __str__(self):
         return (f"Ответ {self.user_profile.session_key} на вопрос "
                 f"'{self.question.text[:30]}...' ({self.created_at:%Y-%m-%d %H:%M})")
+
+
+class SurveyResult(models.Model):
+    """Модель для хранения полных результатов опроса"""
+    user_profile = models.OneToOneField(
+        AnonymousUserProfile,
+        on_delete=models.CASCADE,
+        related_name='survey_result',
+        verbose_name='Профиль пользователя'
+    )
+    responses_data = models.JSONField(
+        verbose_name='Данные ответов',
+        help_text='Все ответы в формате JSON'
+    )
+    calculated_rating = models.JSONField(
+        verbose_name='Рассчитанный рейтинг',
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(
+        default=now,
+        verbose_name='Дата создания'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата обновления'
+    )
+
+    class Meta:
+        verbose_name = 'Результат опроса'
+        verbose_name_plural = 'Результаты опросов'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Результат опроса {self.user_profile.session_key} ({self.created_at:%Y-%m-%d})"

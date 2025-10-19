@@ -2,8 +2,8 @@ import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.http import HttpResponseRedirect
-from .models import Question, Answer, UserResponse, AnonymousUserProfile
-from .utils import calculate_user_rating
+from .models import Question, Answer, UserResponse, AnonymousUserProfile, SurveyResult
+from .utils import calculate_user_rating, save_survey_results
 
 
 def user_profile_view(request):
@@ -156,6 +156,9 @@ def _handle_question_post(request, profile, question, progress, answered, questi
     else:
         profile.filled_survey = True
         profile.save()
+
+        save_survey_results(profile)
+
         return redirect('thank_you_view')
 
 
@@ -335,9 +338,21 @@ def thank_you_view(request):
     if not profile.filled_survey:
         return redirect('questionnaire_start')
 
-    # Расчет и отображение рейтинга
-    rating_data = calculate_user_rating(profile)
-    return render(request, 'thank_you.html', rating_data)
+    # Получаем сохраненные результаты
+    try:
+        survey_result = SurveyResult.objects.get(user_profile=profile)
+        rating_data = survey_result.calculated_rating
+    except SurveyResult.DoesNotExist:
+        # Если результаты не найдены, рассчитываем заново
+        rating_data = calculate_user_rating(profile)
+
+    context = {
+        'profile': profile,
+        'survey_completed': True
+    }
+    context.update(rating_data)
+
+    return render(request, 'thank_you.html', context)
 
 def _get_previous_answered_question(profile, current_question):
     """Возвращает предыдущий отвеченный вопрос относительно текущего"""

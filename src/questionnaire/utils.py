@@ -1,5 +1,6 @@
+from django.db import transaction
 from django.db.models import Prefetch
-from .models import Question, UserResponse, Answer
+from .models import Question, UserResponse, Answer, SurveyResult
 
 # TODO: сейчас это все рассчитывается по всем, хотя можно по пользователю, что снизит нагрузку
 
@@ -1148,3 +1149,60 @@ def get_glucose_status(value):
         status.append("превышение венозной нормы (>6.1 ммоль/л)")
 
     return ", ".join(status) if status else "норма"
+
+
+def save_survey_results(profile):
+    """
+    Сохраняет все ответы пользователя в формате JSON в SurveyResult
+    """
+    # Получаем все ответы пользователя с связанными данными
+    user_responses = UserResponse.objects.filter(
+        user_profile=profile
+    ).select_related('question').prefetch_related('selected_answers')
+
+    # Формируем структуру данных для JSON
+    responses_data = {
+        'profile_info': {
+            'gender': profile.gender,
+            'age': profile.age,
+            'height': profile.height,
+            'weight': profile.weight
+        },
+        'questions': []
+    }
+
+    for response in user_responses:
+        question_data = {
+            'question_id': response.question.id,
+            'question_text': response.question.text,
+            'question_order': response.question.order,
+            'selected_answers': [],
+            'free_text_answer': response.free_text_answer,
+            'numeric_answer': response.numeric_answer
+        }
+
+        # Добавляем выбранные ответы
+        for answer in response.selected_answers.all():
+            question_data['selected_answers'].append({
+                'answer_id': answer.id,
+                'answer_text': answer.text,
+                'value': answer.value,
+                'recommendation': answer.recommendation
+            })
+
+        responses_data['questions'].append(question_data)
+
+    # Рассчитываем рейтинг
+    rating_data = calculate_user_rating(profile)
+
+    # Сохраняем в SurveyResult
+    with transaction.atomic():
+        survey_result, created = SurveyResult.objects.update_or_create(
+            user_profile=profile,
+            defaults={
+                'responses_data': responses_data,
+                'calculated_rating': rating_data
+            }
+        )
+
+    return survey_result
