@@ -892,8 +892,9 @@ def calculate_category_averages(category_values):
 
 
 def safe_average(values):
-    """Безопасно рассчитывает среднее значение"""
-    return round(sum(values) / len(values), 4) if values else 0.0
+    """Безопасно рассчитывает среднее значение только по ненулевым элементам"""
+    non_zero_values = [val for val in values if val > 0]
+    return round(sum(non_zero_values) / len(non_zero_values), 4) if non_zero_values else 0.0
 
 
 def calculate_total_score(averages):
