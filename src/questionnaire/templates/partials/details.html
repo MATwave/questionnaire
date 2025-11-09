@@ -4,55 +4,55 @@
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Медико-биологические факторы
             <span class="badge bg-primary rounded-pill">
-                {% if medico_biological_avg <= 0.47 %}Неудовлетворительная
-                {% elif medico_biological_avg <= 0.67 %}Удовлетворительная
-                {% elif medico_biological_avg <= 0.89 %}Хорошая
-                {% else %}Оптимальная{% endif %}
+                {% if medico_biological_avg <= 0.47 %}Неудовлетворительно
+                {% elif medico_biological_avg <= 0.67 %}Удовлетворительно
+                {% elif medico_biological_avg <= 0.89 %}Допустимо
+                {% else %}Оптимально{% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            Стресс
+            Двигательная активность, режим дня
             <span class="badge bg-primary rounded-pill">
-                {% if stress_avg <= 0.47 %}Неудовлетворительная
-                {% elif stress_avg <= 0.67 %}Удовлетворительная
-                {% elif stress_avg <= 0.89 %}Хорошая
-                {% else %}Оптимальная{% endif %}
+                {% if lifestyle_avg <= 0.47 %}Неудовлетворительно
+                {% elif lifestyle_avg <= 0.67 %}Удовлетворительно
+                {% elif lifestyle_avg <= 0.89 %}Допустимо
+                {% else %}Оптимально{% endif %}
+            </span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Самооценка трудового процесса
+            <span class="badge bg-primary rounded-pill">
+                {% if work_assessment_avg <= 0.47 %}Неудовлетворительно
+                {% elif work_assessment_avg <= 0.67 %}Удовлетворительно
+                {% elif work_assessment_avg <= 0.89 %}Допустимо
+                {% else %}Оптимально{% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Питание
             <span class="badge bg-primary rounded-pill">
-                {% if nutrition_avg <= 0.47 %}Неудовлетворительная
-                {% elif nutrition_avg <= 0.67 %}Удовлетворительная
-                {% elif nutrition_avg <= 0.89 %}Хорошая
-                {% else %}Оптимальная{% endif %}
+                {% if nutrition_avg <= 0.47 %}Неудовлетворительно
+                {% elif nutrition_avg <= 0.67 %}Удовлетворительно
+                {% elif nutrition_avg <= 0.89 %}Допустимо
+                {% else %}Оптимально{% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            Пищевое поведение
+            Пищевые привычки
             <span class="badge bg-primary rounded-pill">
-                {% if eating_behavior_avg <= 0.47 %}Неудовлетворительная
-                {% elif eating_behavior_avg <= 0.67 %}Удовлетворительная
-                {% elif eating_behavior_avg <= 0.89 %}Хорошая
-                {% else %}Оптимальная{% endif %}
+                {% if eating_behavior_avg <= 0.47 %}Неудовлетворительно
+                {% elif eating_behavior_avg <= 0.67 %}Удовлетворительно
+                {% elif eating_behavior_avg <= 0.89 %}Допустимо
+                {% else %}Оптимально{% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            Самооценка труда
+            Стресс
             <span class="badge bg-primary rounded-pill">
-                {% if work_assessment_avg <= 0.47 %}Неудовлетворительная
-                {% elif work_assessment_avg <= 0.67 %}Удовлетворительная
-                {% elif work_assessment_avg <= 0.89 %}Хорошая
-                {% else %}Оптимальная{% endif %}
-            </span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            Образ жизни и ФАиРД
-            <span class="badge bg-primary rounded-pill">
-                {% if lifestyle_avg <= 0.47 %}Неудовлетворительная
-                {% elif lifestyle_avg <= 0.67 %}Удовлетворительная
-                {% elif lifestyle_avg <= 0.89 %}Хорошая
-                {% else %}Оптимальная{% endif %}
+                {% if stress_avg <= 0.47 %}Неудовлетворительно
+                {% elif stress_avg <= 0.67 %}Удовлетворительно
+                {% elif stress_avg <= 0.89 %}Допустимо
+                {% else %}Оптимально{% endif %}
             </span>
         </li>
     </ul>

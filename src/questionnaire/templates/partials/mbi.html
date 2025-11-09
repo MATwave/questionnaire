@@ -1,5 +1,5 @@
 <!-- Блок с ИМТ -->
-<div class="alert alert-secondary mt-3">
+<div class="alert alert-info mt-3">
     <h5 class="mb-2">📊 Ваш ИМТ: <span class="badge bg-info">{{ bmi }}</span></h5>
     <div class="risk-info">
         <p class="fw-bold mb-1">Категория: {{ bmi_category }}</p>
@@ -12,19 +12,28 @@
     </div>
 </div>
 
-<!-- Блок с заболеваниями -->
-{% if existing_diseases != 'Нет' %}
-<div class="alert alert-warning mt-3">
-    <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
-    <ul class="list-unstyled">
-        {% for disease in existing_diseases %}
-            <li>
-                <i class="bi bi-arrow-right-short text-danger"></i>
-                {{ disease }}
-            </li>
-        {% endfor %}
-    </ul>
-</div>
+{% if existing_diseases is None %}
+    <div class="alert alert-info mt-3">
+        <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
+        <p class="mb-0">Данных о заболеваниях нет.</p>
+    </div>
+{% elif existing_diseases == 'Нет' or existing_diseases|length == 0 %}
+    <div class="alert alert-success mt-3">
+        <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
+        <p class="mb-0">Заболеваний не выявлено.</p>
+    </div>
+{% else %}
+    <div class="alert alert-warning mt-3">
+        <h5 class="mb-2">🏥 Имеющиеся заболевания:</h5>
+        <ul class="list-unstyled">
+            {% for disease in existing_diseases %}
+                <li>
+                    <i class="bi bi-arrow-right-short text-danger"></i>
+                    {{ disease }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endif %}
 
 <!-- Блок с талией/бедрами -->

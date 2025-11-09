@@ -11,12 +11,12 @@
                 <nav class="nav nav-pills flex-column">
                     <a class="nav-link" href="#common-recommendations">Общие рекомендации</a>
                     <a class="nav-link" href="#details">Детализация</a>
-                    <a class="nav-link" href="#mbi">Медико-биологические</a>
-                    <a class="nav-link" href="#lifestyle">Образ жизни</a>
+                    <a class="nav-link" href="#mbi">Медико-биологические факторы</a>
+                    <a class="nav-link" href="#lifestyle">Двигательная активность, режим дня</a> <!--бывший ФАиРД-->
                     <a class="nav-link" href="#work">Самооценка трудового процесса</a>
                     <a class="nav-link" href="#nutrition">Питание</a>
-                    <a class="nav-link" href="#food">Отдельные продукты</a>
-                    <a class="nav-link" href="#stress">Стресс</a>
+                    <a class="nav-link" href="#food">Пищевые привычки</a>
+                    <a class="nav-link" href="#stress">Стрессоустойчивость</a>
                 </nav>
             </div>
         </div>
@@ -32,7 +32,7 @@
                 <section id="common-results" class="mb-5">
                     <div class="alert alert-primary">
                         <h5 class="mb-2">Общая оценка:</h5>
-                        <div class="display-4 text-dark mb-2">{{ rating }}</div>
+                        <div class="display-6 text-dark mb-2">{{ rating }} уровень соответствия гигиеническим рекомендациям</div>
                         <p class="mb-0">Средний балл: {{ total_score|floatformat:2 }}</p>
                     </div>
                 </section>
@@ -55,7 +55,7 @@
                 </section>
 
                 <section id="lifestyle" class="mb-5">
-                    <h2 class="text mb-4 text-center">Образ жизни и режим дня</h2>
+                    <h2 class="text mb-4 text-center">Двигательная активность, режим дня</h2>
                     {% include 'partials/lifestyle.html' %}
                 </section>
 
@@ -75,7 +75,7 @@
                 </section>
 
                 <section id="stress" class="mb-5">
-                    <h2 class="text mb-4 text-center">Стресс</h2>
+                    <h2 class="text mb-4 text-center">Стрессоустойчивость</h2>
                     {% include 'partials/stress.html' %}
                 </section>
 

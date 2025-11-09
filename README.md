@@ -135,12 +135,12 @@ BEGIN
             ROUND((up.weight::numeric / ((up.height::numeric/100)^2)), 1) as "ИМТ",
             %s,
             -- Специальные рейтинговые колонки
-            COALESCE((sr.calculated_rating->>''medico_biological_avg'')::numeric, 0) as "МБФ",
-            COALESCE((sr.calculated_rating->>''work_assessment_avg'')::numeric, 0) as "СТП",
-            COALESCE((sr.calculated_rating->>''lifestyle_avg'')::numeric, 0) as "Образ жизни и режим дня",
+            COALESCE((sr.calculated_rating->>''medico_biological_avg'')::numeric, 0) as "Медико-биологические факторы",
+            COALESCE((sr.calculated_rating->>''lifestyle_avg'')::numeric, 0) as "Двигательная активность, режим дня",
+            COALESCE((sr.calculated_rating->>''work_assessment_avg'')::numeric, 0) as "Самооценка трудового процесса",
             COALESCE((sr.calculated_rating->>''nutrition_avg'')::numeric, 0) as "Питание",
-            COALESCE((sr.calculated_rating->>''eating_behavior_avg'')::numeric, 0) as "Пищевое поведение",
-            COALESCE((sr.calculated_rating->>''stress_avg'')::numeric, 0) as "Стресс",
+            COALESCE((sr.calculated_rating->>''eating_behavior_avg'')::numeric, 0) as "Пищевые привычки",
+            COALESCE((sr.calculated_rating->>''stress_avg'')::numeric, 0) as "Стрессоустойчивость",
             COALESCE((sr.calculated_rating->>''total_score'')::numeric, 0) as "ИТОГО",
             COALESCE(sr.calculated_rating->>''rating'', ''Нет оценки'') as "Оценка соответствия"
         FROM questionnaire_surveyresult sr

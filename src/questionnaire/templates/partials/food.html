@@ -1,3 +1,4 @@
+{% if has_snack_issues or fast_food_data.has_fast_food_079 or fast_food_data.has_fast_food_05 or fast_food_data.has_fast_food_0 or has_soda_issues or has_sosage_issues or has_smoked_issues or has_fat_products_issues or has_sauce_issues or has_fried_potato_issues or has_salted_issues or has_high_fat_dairy_issues or has_baking_issues or has_fruits_veggies_answer or has_grain_issues or has_legume_issues or has_lean_meat_issues or has_seafood_issues or dairy_data.has_dairy_0 or dairy_data.has_dairy_low or result.show_oil_advice or has_liquid_issues or has_salt_addition_issues or has_special_foof_issues or has_supplements_issues %}
 <!-- Блок с рекомендациями по снекам -->
 {% if has_snack_issues %}
 <div class="alert alert-danger mt-3">
@@ -367,4 +368,9 @@
         пище с целью повышения биологической ценности рационов питания
     </div>
 </div>
+{% endif %}
+{% else %}
+    <div class="alert alert-info mt-3">
+        <h5 class="mb-3">📊 Данных для отображения нет.</h5>
+    </div>
 {% endif %}

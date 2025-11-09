@@ -906,12 +906,12 @@ def calculate_total_score(averages):
 def determine_rating(total_score):
     """Определяет рейтинг на основе общего балла"""
     if total_score <= 0.47:
-        return "Неудовлетворительная"
+        return "Неудовлетворительный"
     elif total_score <= 0.67:
-        return "Удовлетворительная"
+        return "Удовлетворительный"
     elif total_score <= 0.89:
-        return "Хорошая"
-    return "Оптимальная"
+        return "Допустимый"
+    return "Оптимальный"
 
 
 def update_result(user_profile, result, bmi_data, category_averages, total_score, processed_data):
