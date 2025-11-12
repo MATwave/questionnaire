@@ -159,3 +159,19 @@ $$;
 -- Просмотр результатов
 SELECT * FROM temp_survey_export LIMIT 5;
 ```
+
+
+если надо пересчитать всю выгрузку, то можно зайти в контейнер
+```bash
+docker exec -it src-web-1 /bin/bash
+```
+затем в шелл джанги
+```bash
+python3 manage.py shell
+```
+а внутри уже 
+```python
+>>> from fill_survey_ratings import fill_all_ratings
+>>> fill_all_ratings()
+```
+
