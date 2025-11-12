@@ -2,8 +2,6 @@ from django.db import transaction
 from django.db.models import Prefetch
 from .models import Question, UserResponse, Answer, SurveyResult
 
-# TODO: сейчас это все рассчитывается по всем, хотя можно по пользователю, что снизит нагрузку
-
 # Константы для категорий вопросов
 QUESTION_CATEGORIES = {
     'stress': {
@@ -885,22 +883,27 @@ def calculate_category_averages(category_values):
         if category == 'lifestyle':
             values = [min(val, 1.0) for val in values]
 
-        avg = safe_average(values) if values else 0.0
+        avg = calculate_average(values) if values else 0.0
         averages[f'{category}_avg'] = avg
 
     return averages
 
 
-def safe_average(values):
-    """Безопасно рассчитывает среднее значение только по ненулевым элементам"""
-    non_zero_values = [val for val in values if val > 0]
-    return round(sum(non_zero_values) / len(non_zero_values), 4) if non_zero_values else 0.0
+#def safe_average(values):
+#    """Безопасно рассчитывает среднее значение только по ненулевым элементам"""
+#    non_zero_values = [val for val in values if val > 0]
+#    return round(sum(non_zero_values) / len(non_zero_values), 4) if non_zero_values else 0.0
 
+def calculate_average(values):
+    """Рассчитывает среднее значение по всем элементам (включая нули)"""
+    if not values:
+        return 0.0
+    return round(sum(values) / len(values), 4)
 
 def calculate_total_score(averages):
     """Рассчитывает общий балл"""
     total_values = [v for v in averages.values() if v > 0]
-    return safe_average(total_values) if total_values else 0.0
+    return calculate_average(total_values) if total_values else 0.0
 
 
 def determine_rating(total_score):
