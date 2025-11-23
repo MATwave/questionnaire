@@ -4,55 +4,61 @@
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Медико-биологические факторы
             <span class="badge bg-primary rounded-pill">
-                {% if medico_biological_avg <= 0.47 %}Неудовлетворительно
-                {% elif medico_biological_avg <= 0.67 %}Удовлетворительно
-                {% elif medico_biological_avg <= 0.89 %}Допустимо
-                {% else %}Оптимально{% endif %}
+                {% if medico_biological_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ medico_biological_avg|floatformat:2 }}
+                {% elif medico_biological_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ medico_biological_avg|floatformat:2 }}
+                {% elif medico_biological_avg <= 0.89 %}Допустимо | Средний балл: {{ medico_biological_avg|floatformat:2 }}
+                {% else %}Оптимально | Средний балл: {{ medico_biological_avg|floatformat:2 }}
+                {% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Двигательная активность, режим дня
             <span class="badge bg-primary rounded-pill">
-                {% if lifestyle_avg <= 0.47 %}Неудовлетворительно
-                {% elif lifestyle_avg <= 0.67 %}Удовлетворительно
-                {% elif lifestyle_avg <= 0.89 %}Допустимо
-                {% else %}Оптимально{% endif %}
+                {% if lifestyle_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ lifestyle_avg|floatformat:2 }}
+                {% elif lifestyle_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ lifestyle_avg|floatformat:2 }}
+                {% elif lifestyle_avg <= 0.89 %}Допустимо | Средний балл: {{ lifestyle_avg|floatformat:2 }}
+                {% else %}Оптимально | Средний балл: {{ lifestyle_avg|floatformat:2 }}
+                {% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Самооценка трудового процесса
             <span class="badge bg-primary rounded-pill">
-                {% if work_assessment_avg <= 0.47 %}Неудовлетворительно
-                {% elif work_assessment_avg <= 0.67 %}Удовлетворительно
-                {% elif work_assessment_avg <= 0.89 %}Допустимо
-                {% else %}Оптимально{% endif %}
+                {% if work_assessment_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ work_assessment_avg|floatformat:2 }}
+                {% elif work_assessment_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ work_assessment_avg|floatformat:2 }}
+                {% elif work_assessment_avg <= 0.89 %}Допустимо | Средний балл: {{ work_assessment_avg|floatformat:2 }}
+                {% else %}Оптимально | Средний балл: {{ work_assessment_avg|floatformat:2 }}
+                {% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Питание
             <span class="badge bg-primary rounded-pill">
-                {% if nutrition_avg <= 0.47 %}Неудовлетворительно
-                {% elif nutrition_avg <= 0.67 %}Удовлетворительно
-                {% elif nutrition_avg <= 0.89 %}Допустимо
-                {% else %}Оптимально{% endif %}
+                {% if nutrition_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ nutrition_avg|floatformat:2 }}
+                {% elif nutrition_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ nutrition_avg|floatformat:2 }}
+                {% elif nutrition_avg <= 0.89 %}Допустимо | Средний балл: {{ nutrition_avg|floatformat:2 }}
+                {% else %}Оптимально | Средний балл: {{ nutrition_avg|floatformat:2 }}
+                {% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Пищевые привычки
             <span class="badge bg-primary rounded-pill">
-                {% if eating_behavior_avg <= 0.47 %}Неудовлетворительно
-                {% elif eating_behavior_avg <= 0.67 %}Удовлетворительно
-                {% elif eating_behavior_avg <= 0.89 %}Допустимо
-                {% else %}Оптимально{% endif %}
+                {% if eating_behavior_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ eating_behavior_avg|floatformat:2 }}
+                {% elif eating_behavior_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ eating_behavior_avg|floatformat:2 }}
+                {% elif eating_behavior_avg <= 0.89 %}Допустимо | Средний балл: {{ eating_behavior_avg|floatformat:2 }}
+                {% else %}Оптимально | Средний балл: {{ eating_behavior_avg|floatformat:2 }}
+                {% endif %}
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
             Стресс
             <span class="badge bg-primary rounded-pill">
-                {% if stress_avg <= 0.47 %}Неудовлетворительно
-                {% elif stress_avg <= 0.67 %}Удовлетворительно
-                {% elif stress_avg <= 0.89 %}Допустимо
-                {% else %}Оптимально{% endif %}
+                {% if stress_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ stress_avg|floatformat:2 }}
+                {% elif stress_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ stress_avg|floatformat:2 }}
+                {% elif stress_avg <= 0.89 %}Допустимо | Средний балл: {{ stress_avg|floatformat:2 }}
+                {% else %}Оптимально | Средний балл: {{ stress_avg|floatformat:2 }}
+                {% endif %}
             </span>
         </li>
     </ul>

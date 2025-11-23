@@ -4,54 +4,86 @@ from .models import Question, UserResponse, Answer, SurveyResult
 
 # Константы для категорий вопросов
 QUESTION_CATEGORIES = {
-    'stress': {
-        'descriptions': ["СТРЕСС"],
-        'label': 'СТРЕСС'
-    },
-    'nutrition': {
+
+    'medico_biological': {
         'descriptions': [
-            "ПИТАНИЕ", "ПРИЕМЫ ПИЩИ", "ВРЕМЯ ПЕРЕРЫВОВ МЕЖДУ ЕДОЙ", "ЗАВТРАК",
-            "НАИБОЛЕЕ ПЛОТНЫЙ ПРИЕМ ПИЩИ", "ЕДА ДО СНА", "ВИД ЖИРОВ", "ГОЛОД",
-            "ЭМОЦИОНАЛЬНЫЕ ПЕРЕКУСЫ", "ПООЩРЕНИЕ ИЛИ НАКАЗАНИЕ ЕДОЙ"
+            "Имеющиеся заболевания",
+            "ОКРУЖНОСТЬ (ТАЛИИ)",
+            "ОКРУЖНОСТЬ (БЕДЕР)",
+            "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ",
+            "ОБЩИЙ ХОЛЕСТЕРИН",
+            "УРОВЕНЬ ГЛЮКОЗЫ"
         ],
-        'label': 'ПИТАНИЕ'
+        'label': 'Медико-биологические факторы'
     },
-    'eating_behavior': {
+
+    'lifestyle': {
         'descriptions': [
-            "ПИЩЕВОЕ ПОВЕДЕНИЕ", "СНЕКИ", "ФАСТ-ФУД", "СЛАДКАЯ ГАЗИРОВКА",
-            "КОЛБАСНЫЕ ИЗДЕЛИЯ", "КОПЧЕНЫЕ ПРОДУКТЫ", "ПИЩЕВЫЕ ЖИРЫ", "СОУСЫ",
-            "ЖАРЕННЫЙ КАРТОФЕЛЬ", "СОЛЕНЫЕ И КОНСЕРВИРОВАННЫЕ ПРОДУКТЫ",
-            "МОЛОЧНЫЕ ПРОДУКТЫ С ВЫСОКОЙ ЖИРНОСТЬЮ", "ВЫПЕЧКА",
-            "КОЛИЧЕСТВО ФРУКТОВ И ОВОЩЕЙ", "ЗЛАКОВЫЕ ПРОДУКТЫ", "БОБОВЫЕ",
-            "НЕЖИРНОЕ МЯСО", "РЫБА И МОРЕПРОДУКТЫ", "МОЛОКО И КИСЛОМОЛОЧКА",
-            "РАСТИТЕЛЬНЫЕ МАСЛА", "ЖИДКОСТЬ В ДЕНЬ", "ДОСАЛИВАНИЕ",
-            "СПЕЦИАЛЬНАЯ ПИЩЕВАЯ ПРОДУКЦИЯ", "БАДЫ"
+            "ДВИГАТЕЛЬНАЯ АКТИВНОСТЬ",
+            "СОН",
+            "ЦИФРОВАЯ ГИГИЕНА",
+            "ОТПУСК",
+            "АЛКОГОЛЬ",
+            "ОБРАЗ ЖИЗНИ И РЕЖИМ ДНЯ",
+            "Курение (сигарет в день)",
+            "Курение (лет стажа)"
         ],
-        'label': 'Пищевое поведение'
+        'label': 'Образ жизни и ФАиРД'
     },
     'work_assessment': {
         'descriptions': [
             "САМООЦЕНКА ТРУДОВОГО ПРОЦЕССА", "РАБОЧЕЕ МЕСТО", "ФИЗИЧЕСКИЕ НАГРУЗКИ",
-            "ТЕМП РАБОТЫ", "ЭМОЦИОНАЛЬНАЯ НАГРУЗКА", "УТОМЛЯЕМОСТЬ", "ГРАФИК РАБОТЫ",
+            "ТЕМП РАБОТЫ", "ЭМОЦИОНАЛЬНАЯ НАГРУЗКА", "УТОМЛЯЕМОСТЬ", "ГРАФИК РАБОТЫ", "ЖАЛОБЫ НА ПРОИЗВОДСТВО", "ЖАЛОБЫ НА ЗДОРОВЬЕ"
             "ТРУД С ЦИФРОВЫМИ УСТРОЙСТВАМИ", "КРИТИЧЕСКИЕ СИТУАЦИИ", "ЭКСТРА УСИЛИЯ",
             "РЕГЛАМЕНТИРОВАННЫЕ ПЕРЕРЫВЫ", "ОБЕДЕННЫЙ ПЕРЕРЫВ", "РАБОТА НА ДОМУ"
         ],
         'label': 'Самооценка труда'
     },
-    'lifestyle': {
+    'nutrition': {
         'descriptions': [
-            "ДВИГАТЕЛЬНАЯ АКТИВНОСТЬ", "СОН", "ЦИФРОВАЯ ГИГИЕНА", "ОТПУСК", "АЛКОГОЛЬ",
-            "ОБРАЗ ЖИЗНИ И РЕЖИМ ДНЯ", "Курение (сигарет в день)", "Курение (лет стажа)"
+            "ПРИЕМЫ ПИЩИ",
+            "ВРЕМЯ ПЕРЕРЫВОВ МЕЖДУ ЕДОЙ",
+            "ЗАВТРАК",
+            "НАИБОЛЕЕ ПЛОТНЫЙ ПРИЕМ ПИЩИ",
+            "ЕДА ДО СНА",
+            "ВИД ЖИРОВ",
+            "ГОЛОД",
+            "ЭМОЦИОНАЛЬНЫЕ ПЕРЕКУСЫ",
+            "ПООЩРЕНИЕ ИЛИ НАКАЗАНИЕ ЕДОЙ"
         ],
-        'label': 'Образ жизни и ФАиРД'
+        'label': 'ПИТАНИЕ'
     },
-    'medico_biological': {
+    'eating_behavior': {
         'descriptions': [
-            "МЕДИКО-БИОЛОГИЧЕСКИЕ ФАКТОРЫ", "Имеющиеся заболевания", "ОКРУЖНОСТЬ (ТАЛИИ)",
-            "ОКРУЖНОСТЬ (БЕДЕР)", "АРТЕРИАЛЬНОЕ ДАВЛЕНИЕ", "ОБЩИЙ ХОЛЕСТЕРИН", "УРОВЕНЬ ГЛЮКОЗЫ"
+            "ПИЩЕВОЕ ПОВЕДЕНИЕ",
+            "СНЕКИ",
+            "ФАСТ-ФУД",
+            "СЛАДКАЯ ГАЗИРОВКА",
+            "КОЛБАСНЫЕ ИЗДЕЛИЯ",
+            "КОПЧЕНЫЕ ПРОДУКТЫ",
+            "ПИЩЕВЫЕ ЖИРЫ",
+            "СОУСЫ",
+            "ЖАРЕННЫЙ КАРТОФЕЛЬ",
+            "СОЛЕНЫЕ И КОНСЕРВИРОВАННЫЕ ПРОДУКТЫ",
+            "МОЛОЧНЫЕ ПРОДУКТЫ С ВЫСОКОЙ ЖИРНОСТЬЮ",
+            "ВЫПЕЧКА",
+            "КОЛИЧЕСТВО ФРУКТОВ И ОВОЩЕЙ",
+            "ЗЛАКОВЫЕ ПРОДУКТЫ",
+            "БОБОВЫЕ",
+            "НЕЖИРНОЕ МЯСО", "РЫБА И МОРЕПРОДУКТЫ",
+            "МОЛОКО И КИСЛОМОЛОЧКА",
+            "РАСТИТЕЛЬНЫЕ МАСЛА",
+            "ЖИДКОСТЬ В ДЕНЬ",
+            "ДОСАЛИВАНИЕ",
+            "СПЕЦИАЛЬНАЯ ПИЩЕВАЯ ПРОДУКЦИЯ",
+            "БАДЫ"
         ],
-        'label': 'Медико-биологические факторы'
-    }
+        'label': 'Пищевое поведение'
+    },
+    'stress': {
+        'descriptions': ["СТРЕСС"],
+        'label': 'СТРЕСС'
+    },
 }
 
 def get_question_categories():
@@ -171,7 +203,6 @@ def calculate_user_rating(user_profile):
 
     bmi_data = calculate_bmi_data(user_profile)
     processed_data = process_responses(responses, bmi_data, user_profile)
-
     category_averages = calculate_category_averages(processed_data['category_values'])
     total_score = calculate_total_score(category_averages)
 
@@ -246,6 +277,7 @@ def process_responses(responses, bmi_data, user_profile):
     """Обрабатывает все ответы пользователя и возвращает структурированные данные"""
     # Инициализация структур данных
     data = {
+        # МБФ--------------------------------------------------------------------
         'category_values': {key: [] for key in QUESTION_CATEGORIES},
 
         # Данные об имеющихся неинфекционных заболеваниях
@@ -258,7 +290,7 @@ def process_responses(responses, bmi_data, user_profile):
         'bp_data': {'systolic': None, 'diastolic': None, 'unknown': False},
         'cholesterol_data': {'value': None, 'unknown': False},
         'glucose_data': {'value': None, 'unknown': False},
-
+        #------------------------------------------------------------------------
         # Данные о курении
         'smoking_data': {'cigarettes': 0, 'years': 0},
 
@@ -277,6 +309,8 @@ def process_responses(responses, bmi_data, user_profile):
         'emotional_load_values': [],
         'fatigue_values': [],
         'schedule_values': [],
+        'industrial_complaints': [],
+        'health_complaints': [],
         'digital_work_values': [],
         'critical_values': [],
         'extra_effort_values': [],
@@ -390,7 +424,7 @@ def process_single_response(response, data, user_profile):
     if handle_special_questions(response, values, data, user_profile):
         return
 
-    # Обработка категории lifestyle (включая курение)
+    # Обработка категории lifestyle (образ жизни и режим дня) (включая курение)
     if category == 'lifestyle':
         handle_lifestyle_response(response, values, data)
     elif category:
@@ -436,153 +470,207 @@ def handle_special_questions(response, values, data, user_profile):
     # Категория "Образ жизни"
     elif desc == "ДВИГАТЕЛЬНАЯ АКТИВНОСТЬ":
         data['physical_activity_values'].extend(values)
+        data['category_values']['lifestyle'].extend(values)
         return True
     elif desc == "СОН":
         data['sleep_values'].extend(values)
+        data['category_values']['lifestyle'].extend(values)
         return True
     elif desc == "ЦИФРОВАЯ ГИГИЕНА":
         data['digital_hygiene_values'].extend(values)
+        data['category_values']['lifestyle'].extend(values)
         return True
     elif desc == "ОТПУСК":
         data['has_vacation_answers'] = True
+        data['category_values']['lifestyle'].extend(values)
         return True
     elif desc == "АЛКОГОЛЬ":
         data['alcohol_alert'] = True
+        data['category_values']['lifestyle'].extend(values)
         return True
 
     # Категория "Самооценка труда"
     elif desc == "РАБОЧЕЕ МЕСТО":
         data['workplace_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "ФИЗИЧЕСКИЕ НАГРУЗКИ":
         data['physical_load_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "ТЕМП РАБОТЫ":
         data['work_pace_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "ЭМОЦИОНАЛЬНАЯ НАГРУЗКА":
         data['emotional_load_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "УТОМЛЯЕМОСТЬ":
         data['fatigue_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "ГРАФИК РАБОТЫ":
         data['schedule_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
+        return True
+    elif desc == "ЖАЛОБЫ НА ПРОИЗВОДСТВО":
+        handle_industrial_complaints(response, data)
+        return True
+    elif desc == "ЖАЛОБЫ НА ЗДОРОВЬЕ":
+        handle_health_complaints(response, data)
         return True
     elif desc == "ТРУД С ЦИФРОВЫМИ УСТРОЙСТВАМИ":
         data['digital_work_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "КРИТИЧЕСКИЕ СИТУАЦИИ":
         data['critical_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "ЭКСТРА УСИЛИЯ":
         data['extra_effort_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "РЕГЛАМЕНТИРОВАННЫЕ ПЕРЕРЫВЫ":
         data['breaks_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "ОБЕДЕННЫЙ ПЕРЕРЫВ":
         data['lunch_break_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
     elif desc == "РАБОТА НА ДОМУ":
         data['remote_work_values'].extend(values)
+        data['category_values']['work_assessment'].extend(values)
         return True
 
     # Категория "Питание"
     elif desc == "ПРИЕМЫ ПИЩИ":
         data['meal_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ВРЕМЯ ПЕРЕРЫВОВ МЕЖДУ ЕДОЙ":
         data['interval_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ЗАВТРАК":
         data['breakfast_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "НАИБОЛЕЕ ПЛОТНЫЙ ПРИЕМ ПИЩИ":
         data['density_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ЕДА ДО СНА":
         data['evening_meal_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ВИД ЖИРОВ":
         data['fat_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ГОЛОД":
         data['hunger_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ЭМОЦИОНАЛЬНЫЕ ПЕРЕКУСЫ":
         data['emotional_eating_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ПООЩРЕНИЕ ИЛИ НАКАЗАНИЕ ЕДОЙ":
         data['food_reward_values'].extend(values)
+        data['category_values']['nutrition'].extend(values)
         return True
 
     # Категория "Пищевое поведение"
     elif desc == "СНЕКИ":
         data['snack_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "ФАСТ-ФУД":
         data['fast_food_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "СЛАДКАЯ ГАЗИРОВКА":
         data['soda_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "КОЛБАСНЫЕ ИЗДЕЛИЯ":
         data['sausage_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "КОПЧЕНЫЕ ПРОДУКТЫ":
         data['smoked_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "ПИЩЕВЫЕ ЖИРЫ":
         data['fat_product_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "СОУСЫ":
         data['sauce_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "ЖАРЕННЫЙ КАРТОФЕЛЬ":
         data['fried_potato_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "СОЛЕНЫЕ И КОНСЕРВИРОВАННЫЕ ПРОДУКТЫ":
         data['salted_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "МОЛОЧНЫЕ ПРОДУКТЫ С ВЫСОКОЙ ЖИРНОСТЬЮ":
         data['high_fat_dairy_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "ВЫПЕЧКА":
         data['baking_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "КОЛИЧЕСТВО ФРУКТОВ И ОВОЩЕЙ":
         data['has_fruits_veggies_answer'] = True
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "ЗЛАКОВЫЕ ПРОДУКТЫ":
         data['grain_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "БОБОВЫЕ":
         data['legume_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "НЕЖИРНОЕ МЯСО":
         data['lean_meat_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "РЫБА И МОРЕПРОДУКТЫ":
         data['seafood_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "МОЛОКО И КИСЛОМОЛОЧКА":
         data['dairy_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "РАСТИТЕЛЬНЫЕ МАСЛА":
         data['has_oil_answer'] = True
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "ЖИДКОСТЬ В ДЕНЬ":
         data['liquid_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "ДОСАЛИВАНИЕ":
         data['salt_addition_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "СПЕЦИАЛЬНАЯ ПИЩЕВАЯ ПРОДУКЦИЯ":
         data['special_food_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
     elif desc == "БАДЫ":
         data['supplements_values'].extend(values)
+        data['category_values']['eating_behavior'].extend(values)
         return True
 
     return False
@@ -595,13 +683,6 @@ def handle_waist_measurement(response, data, user_profile):
 
     waist_value = response.numeric_answer
     if 50 <= waist_value <= 200:  # Валидация
-        # Расчет балла за талию
-        if user_profile.gender == 'M':
-            waist_score = 1.0 if waist_value <= 94 else 0.0
-        else:
-            waist_score = 1.0 if waist_value <= 80 else 0.0
-
-        data['category_values']['medico_biological'].append(waist_score)
         data['waist_hip_data']['waist'] = waist_value
 
 
@@ -627,10 +708,6 @@ def handle_cholesterol(response, data):
                 data['cholesterol_data'].update({'unknown': True, 'value': None})
             else:
                 data['cholesterol_data'].update({'unknown': False, 'value': value})
-
-            # Добавление балла в категорию
-            cholesterol_score = 1.0 if 0 < value <= 5.5 else 0.0
-            data['category_values']['medico_biological'].append(cholesterol_score)
         except (ValueError, TypeError):
             data['cholesterol_data']['unknown'] = True
     else:
@@ -638,10 +715,7 @@ def handle_cholesterol(response, data):
 
 
 def handle_glucose(response, data):
-    """Обрабатывает ответ на вопрос об уровне глюкозы
-
-    балл добавляется в post_process_data
-    """
+    """Обрабатывает ответ на вопрос об уровне глюкозы"""
     if response.numeric_answer is not None:
         try:
             value = float(response.numeric_answer)
@@ -660,6 +734,18 @@ def handle_diseases(response, data):
     data['diseases'].extend([a.text for a in response.selected_answers.all()])
     if response.free_text_answer:
         data['diseases'].append(response.free_text_answer)
+
+def handle_industrial_complaints(response, data):
+    """Обрабатывает ответ об имеющихся жалобы на производственные факторы"""
+    data['industrial_complaints'].extend([a.text for a in response.selected_answers.all()])
+    if response.free_text_answer:
+        data['industrial_complaints'].append(response.free_text_answer)
+
+def handle_health_complaints(response, data):
+    """Обрабатывает ответ об имеющихся жалобы здоровье во время работы"""
+    data['health_complaints'].extend([a.text for a in response.selected_answers.all()])
+    if response.free_text_answer:
+        data['health_complaints'].append(response.free_text_answer)
 
 
 def handle_blood_pressure(response, data):
@@ -702,20 +788,28 @@ def handle_lifestyle_response(response, values, data):
 def post_process_data(data, bmi_data, user_profile):
     """Выполняет пост-обработку данных после обработки всех ответов"""
 
-    # Расчет индекса курения
-    cigarettes = data['smoking_data'].get('cigarettes', 0)
-    years = data['smoking_data'].get('years', 0)
-
-    if cigarettes > 0 and years > 0:
-        smoking_index = (cigarettes * years) / 20
-        data['category_values']['lifestyle'].append(min(smoking_index, 1.0))
-
-    # Добавление балла ИМТ
+    # МБФ--------------------------------------------------------------------------
+    # Добавление балла за ИМТ
     bmi_score = BMI_SCORE_MAP.get(bmi_data.get('category', ''), 0.0)
     data['category_values']['medico_biological'].append(bmi_score)
 
-    # Расчет показателя талия/бедро
+    # Добавление балла за заболевания
+    if data['diseases']:
+        if len(data['diseases']) == 1 and 'Нет' in data['diseases']:
+            data['category_values']['medico_biological'].append(1.0)
+        else:
+            data['category_values']['medico_biological'].append(0.0)
+
+
+    # Добавления балла за
     waist = data['waist_hip_data']['waist']
+    if waist is not None:
+        if user_profile.gender == 'M':
+            waist_score = 1.0 if waist < 94 else 0.0
+        else:
+            waist_score = 1.0 if waist < 80 else 0.0
+        data['category_values']['medico_biological'].append(waist_score)
+
     hip = data['waist_hip_data']['hip']
     if waist is not None and hip is not None and hip > 0:
         ratio = waist / hip
@@ -727,20 +821,29 @@ def post_process_data(data, bmi_data, user_profile):
 
     # Добавление балла артериального давления
     bp_status = get_bp_status(data['bp_data'])
-    bp_score = 1.0 if bp_status == 'normal' else 0.0
-    data['category_values']['medico_biological'].append(bp_score)
+    if bp_status != 'unknown':
+        bp_score = 1.0 if bp_status == 'normal' else 0.0
+        data['category_values']['medico_biological'].append(bp_score)
+
+    # Добавление балла за холестерин
+    if not data['cholesterol_data']['unknown'] and data['cholesterol_data']['value'] is not None:
+        value = data['cholesterol_data']['value']
+        if value < 5.5:
+            data['category_values']['medico_biological'].append(1.0)
+        else:
+            data['category_values']['medico_biological'].append(0.0)
 
     # Добавление балла глюкозы
     if not data['glucose_data']['unknown'] and data['glucose_data']['value'] is not None:
         value = data['glucose_data']['value']
-        if value > 6.1:
-            data['category_values']['medico_biological'].append(0.0)
-        elif value > 5.6:
-            data['category_values']['medico_biological'].append(0.0)
-        else:
+        if value < 6.1:
             data['category_values']['medico_biological'].append(1.0)
-    else:
-        data['category_values']['medico_biological'].append(0.0)
+        else:
+            data['category_values']['medico_biological'].append(0.0)
+
+    #------------------------------------------------------------------------------------------
+
+    #ОБРАЗ ЖИНИ--------------------------------------------------------------------------------
 
     # Анализ двигательной активности
     data['has_low_activity'] = any(v in (0, 0.5) for v in data['physical_activity_values'])
@@ -751,7 +854,17 @@ def post_process_data(data, bmi_data, user_profile):
     # Анализ цифровой гигиены
     data['has_digital_issues'] = any(v in (0, 0.5) for v in data['digital_hygiene_values'])
 
-    # Анализ условий труда
+    # Расчет индекса курения
+    if data['smoking_data']:
+        cigarettes = data['smoking_data'].get('cigarettes', 0)
+        years = data['smoking_data'].get('years', 0)
+        if cigarettes > 0 and years > 0:
+            smoking_index = (cigarettes * years) / 20
+            #data['category_values']['lifestyle'].append(min(smoking_index, 1.0))
+
+    # ------------------------------------------------------------------------------------------
+
+    # Самонализ условий труда-------------------------------------------------------------------
     data['has_workplace_issues'] = any(v in (0, 0.5) for v in data['workplace_values'])
     data['has_physical_load_issues'] = any(v in (0, 0.5) for v in data['physical_load_values'])
     data['has_work_pace_issues'] = any(v in (0, 0.5) for v in data['work_pace_values'])
@@ -759,6 +872,20 @@ def post_process_data(data, bmi_data, user_profile):
     data['has_fatigue_issues'] = any(v in (0, 0.5) for v in data['fatigue_values'])
     data['has_schedule_issues'] = any(v in (0, 0.5) for v in data['schedule_values'])
     data['has_digital_work_issues'] = any(v in (0, 0.5) for v in data['digital_work_values'])
+
+    # Добавление балла за производственные факторы
+    if data['industrial_complaints']:
+        if len(data['industrial_complaints']) == 1 and 'Нет вредных производственных факторов' in data['industrial_complaints']:
+            data['category_values']['work_assessment'].append(1.0)
+        else:
+            data['category_values']['work_assessment'].append(0.0)
+
+    # Добавление балла за жалобы на здоровье во время работы
+    if data['health_complaints']:
+        if len(data['health_complaints']) == 1 and 'Ничего не беспокоит' in data['health_complaints']:
+            data['category_values']['work_assessment'].append(1.0)
+        else:
+            data['category_values']['work_assessment'].append(0.0)
 
     # Анализ критических ситуаций
     data['critical_data'] = {
@@ -782,8 +909,9 @@ def post_process_data(data, bmi_data, user_profile):
         'has_remote_05': any(v == 0.5 for v in data['remote_work_values']),
         'has_remote_0': any(v == 0 for v in data['remote_work_values'])
     }
+    # ------------------------------------------------------------------------------------------
 
-    # Анализ питания
+    # Питание ----------------------------------------------------------------------------------
     data['meal_data'] = {
         'has_meal_05': any(v == 0.5 for v in data['meal_values']),
         'has_meal_0': any(v == 0 for v in data['meal_values'])
@@ -820,6 +948,9 @@ def post_process_data(data, bmi_data, user_profile):
 
     # Анализ пищевых привычек
     data['has_food_reward_issues'] = any(v in {0, 0.5} for v in data['food_reward_values'])
+    # ------------------------------------------------------------------------------------------
+
+    # Пищевые привычки -------------------------------------------------------------------------
     data['has_snack_issues'] = any(v in {0, 0.5, 0.79} for v in data['snack_values'])
 
     # Анализ фаст-фуда
@@ -857,6 +988,10 @@ def post_process_data(data, bmi_data, user_profile):
     data['has_salt_addition_issues'] = any(v in {0, 0.5} for v in data['salt_addition_values'])
     data['has_special_foof_issues'] = any(v in {0, 0.5} for v in data['special_food_values'])
     data['has_supplements_issues'] = any(v in {0, 0.5} for v in data['supplements_values'])
+    # ------------------------------------------------------------------------------------------
+
+    # Стресс -----------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------
 
 
 def get_bp_status(bp_data):
@@ -879,9 +1014,6 @@ def calculate_category_averages(category_values):
     """Рассчитывает средние значения по категориям"""
     averages = {}
     for category, values in category_values.items():
-        # Для lifestyle применяем нормализацию
-        if category == 'lifestyle':
-            values = [min(val, 1.0) for val in values]
 
         avg = calculate_average(values) if values else 0.0
         averages[f'{category}_avg'] = avg
@@ -1110,12 +1242,6 @@ def get_waist_status(profile, waist):
 
 def get_ratio_status(profile, data):
     """Определяет статус соотношения талия/бедро"""
-    try:
-        waist = float(data.get('waist'))
-        hip = float(data.get('hip'))
-    except (TypeError, ValueError):
-        return None
-
     if not data.get('waist') or not data.get('hip') or not profile.gender:
         return None
 
