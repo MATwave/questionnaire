@@ -1,4 +1,4 @@
-{% if remote_work_data.has_remote_05 or remote_work_data.has_remote_0 or meal_data.has_meal_05 or meal_data.has_meal_0 or interval_data.has_interval_05 or interval_data.has_interval_0 or breakfast_data.has_breakfast_079 or breakfast_data.has_breakfast_05 or breakfast_data.has_breakfast_0 or density_data.has_density_05 or density_data.has_density_0 or has_evening_meal_issues or has_fat_issues or has_hunger_issues or not emotional_eating_data.all_healthy or emotional_eating_data.has_emotional_eating_079 or emotional_eating_data.has_emotional_eating_05 or emotional_eating_data.has_emotional_eating_0 or has_food_reward_issues %}
+{% if remote_work_data.has_remote_05 or remote_work_data.has_remote_0 or meal_data.has_meal_05 or meal_data.has_meal_0 or interval_data.has_interval_05 or interval_data.has_interval_0 or breakfast_data.has_breakfast_079 or breakfast_data.has_breakfast_05 or breakfast_data.has_breakfast_0 or density_data.has_density_05 or density_data.has_density_0 or has_evening_meal_issues or has_fat_issues or has_hunger_issues or not emotional_eating_data.all_healthy or emotional_eating_data.has_emotional_eating_079 or emotional_eating_data.has_emotional_eating_05 or emotional_eating_data.has_emotional_eating_0 or has_food_reward_issues or emotional_eating_data.all_healthy %}
     <!-- Блок с рекомендациями по работе на дому -->
     {% if remote_work_data.has_remote_05 or remote_work_data.has_remote_0 %}
     <div class="alert alert-secondary mt-3">
@@ -34,8 +34,7 @@
         {% if meal_data.has_meal_05 %}
         <div class="alert alert-info mb-3">
             <ul class="mb-0">
-                <li>Необходимо организовать дополнительный прием пищи в течение дня</li>
-                <li>Рекомендуется принимать пищу 4-5 раз в день.</li>
+                <li>Необходимо увеличить интервалы между приемами пищи до 4-5 часов </li>
             </ul>
         </div>
         {% endif %}
@@ -44,8 +43,7 @@
         {% if meal_data.has_meal_0 %}
         <div class="alert alert-danger mb-3">
             <ul class="mb-0">
-                <li>Необходимо уменьшить количество перекусов</li>
-                <li>Рекомендуется принимать пищу 4-5 раз в день</li>
+                <li>Необходимо уменьшить интервалы между приемами пищи до 4-5-часов</li>
             </ul>
         </div>
         {% endif %}
@@ -340,6 +338,13 @@
         {% endif %}
 
     </div>
+    {% else %}
+    <div class="alert alert-info mt-3">
+        <h5 class="mb-3">😔 Эмоциональное питание</h5>
+        <div class="alert alert-success mb-3">
+        <h6>У Вас – нормальное (здоровое) пищевое поведение</h6>
+    </div>
+    </div>
     {% endif %}
 
     <!-- Блок с рекомендациями по пищевым паттернам -->
@@ -356,6 +361,6 @@
 
 {% else %}
     <div class="alert alert-info mt-3">
-        <h5 class="mb-3"> Данных для отображения нет.</h5>
+        <h5 class="mb-3">📊 Данных для отображения нет.</h5>
     </div>
 {% endif %}

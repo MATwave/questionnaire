@@ -12,7 +12,7 @@
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            Двигательная активность, режим дня
+            Двигательная активность, режим дня, вредные привычки
             <span class="badge bg-primary rounded-pill">
                 {% if lifestyle_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ lifestyle_avg|floatformat:2 }}
                 {% elif lifestyle_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ lifestyle_avg|floatformat:2 }}
@@ -32,7 +32,7 @@
             </span>
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            Питание
+            Режим питания
             <span class="badge bg-primary rounded-pill">
                 {% if nutrition_avg <= 0.47 %}Неудовлетворительно | Средний балл: {{ nutrition_avg|floatformat:2 }}
                 {% elif nutrition_avg <= 0.67 %}Удовлетворительно | Средний балл: {{ nutrition_avg|floatformat:2 }}

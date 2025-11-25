@@ -136,11 +136,11 @@ BEGIN
             %s,
             -- Специальные рейтинговые колонки
             COALESCE((sr.calculated_rating->>''medico_biological_avg'')::numeric, 0) as "Медико-биологические факторы",
-            COALESCE((sr.calculated_rating->>''lifestyle_avg'')::numeric, 0) as "Двигательная активность, режим дня",
+            COALESCE((sr.calculated_rating->>''lifestyle_avg'')::numeric, 0) as "Двигательная активность, режим дня, вредные привычки",
             COALESCE((sr.calculated_rating->>''work_assessment_avg'')::numeric, 0) as "Самооценка трудового процесса",
-            COALESCE((sr.calculated_rating->>''nutrition_avg'')::numeric, 0) as "Питание",
+            COALESCE((sr.calculated_rating->>''nutrition_avg'')::numeric, 0) as "Режим питания",
             COALESCE((sr.calculated_rating->>''eating_behavior_avg'')::numeric, 0) as "Пищевые привычки",
-            COALESCE((sr.calculated_rating->>''stress_avg'')::numeric, 0) as "Стрессоустойчивость",
+            COALESCE((sr.calculated_rating->>''stress_avg'')::numeric, 0) as "Самооценка стрессоустойчивости",
             COALESCE((sr.calculated_rating->>''total_score'')::numeric, 0) as "ИТОГО",
             COALESCE(sr.calculated_rating->>''rating'', ''Нет оценки'') as "Оценка соответствия"
         FROM questionnaire_surveyresult sr
