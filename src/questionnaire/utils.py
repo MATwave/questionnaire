@@ -70,7 +70,8 @@ QUESTION_CATEGORIES = {
             "КОЛИЧЕСТВО ФРУКТОВ И ОВОЩЕЙ",
             "ЗЛАКОВЫЕ ПРОДУКТЫ",
             "БОБОВЫЕ",
-            "НЕЖИРНОЕ МЯСО", "РЫБА И МОРЕПРОДУКТЫ",
+            "НЕЖИРНОЕ МЯСО",
+            "РЫБА И МОРЕПРОДУКТЫ",
             "МОЛОКО И КИСЛОМОЛОЧКА",
             "РАСТИТЕЛЬНЫЕ МАСЛА",
             "ЖИДКОСТЬ В ДЕНЬ",
@@ -567,7 +568,6 @@ def handle_special_questions(response, values, data, user_profile):
         data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ВИД ЖИРОВ":
-        data['fat_values'].extend(values)
         data['category_values']['nutrition'].extend(values)
         return True
     elif desc == "ГОЛОД":
@@ -859,8 +859,17 @@ def post_process_data(data, bmi_data, user_profile):
         cigarettes = data['smoking_data'].get('cigarettes', 0)
         years = data['smoking_data'].get('years', 0)
         if cigarettes > 0 and years > 0:
+            if 1 <= cigarettes <= 2:
+                data['category_values']['lifestyle'].append(0.79)
+            elif 3 <= cigarettes <= 10:
+                data['category_values']['lifestyle'].append(0.5)
+            else:
+                data['category_values']['lifestyle'].append(0.0)
             smoking_index = (cigarettes * years) / 20
-            #data['category_values']['lifestyle'].append(min(smoking_index, 1.0))
+            if smoking_index > 10:
+                data['category_values']['lifestyle'].append(0.0)
+            else:
+                data['category_values']['lifestyle'].append(0.5)
 
     # ------------------------------------------------------------------------------------------
 
@@ -938,7 +947,7 @@ def post_process_data(data, bmi_data, user_profile):
     has_emotional_eating_05 = any(v == 0.5 for v in data['emotional_eating_values']) and not has_emotional_eating_0
     has_emotional_eating_079 = any(v == 0.79 for v in data['emotional_eating_values']) and not (
             has_emotional_eating_0 or has_emotional_eating_05)
-    all_healthy = all(v == 1 for v in data['emotional_eating_values'])
+    all_healthy = bool(data['emotional_eating_values']) and all(v == 1 for v in data['emotional_eating_values'])
     data['emotional_eating_data'] = {
         'has_emotional_eating_0': has_emotional_eating_0,
         'has_emotional_eating_05': has_emotional_eating_05,
@@ -1092,7 +1101,9 @@ def update_result(user_profile, result, bmi_data, category_averages, total_score
     result.update({
         'cholesterol_value': processed_data['cholesterol_data'].get('value'),
         'cholesterol_status': 'high' if (processed_data['cholesterol_data'].get('value') or 0) > 5.5 else 'normal',
-        'cholesterol_unknown': processed_data['cholesterol_data'].get('unknown', False)
+        'cholesterol_unknown': processed_data['cholesterol_data']['unknown'] or
+                processed_data['cholesterol_data'].get('value') is None or
+                processed_data['cholesterol_data'].get('value') == 0
     })
 
     # Обновление данных глюкозы
@@ -1272,13 +1283,12 @@ def get_glucose_status(value):
     if value is None or value == 0:
         return 'unknown'
 
-    status = []
-    if value > 5.6:
-        status.append("превышение капиллярной нормы (>5.6 ммоль/л)")
-    if value > 6.1:
-        status.append("превышение венозной нормы (>6.1 ммоль/л)")
-
-    return ", ".join(status) if status else "норма"
+    if value >= 6.1:
+        return "diabetes"
+    elif value > 5.6:
+        return "prediabetes"
+    else:
+        return "normal"
 
 
 def save_survey_results(profile):

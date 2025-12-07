@@ -1,4 +1,4 @@
-{% if has_snack_issues or fast_food_data.has_fast_food_079 or fast_food_data.has_fast_food_05 or fast_food_data.has_fast_food_0 or has_soda_issues or has_sosage_issues or has_smoked_issues or has_fat_products_issues or has_sauce_issues or has_fried_potato_issues or has_salted_issues or has_high_fat_dairy_issues or has_baking_issues or has_fruits_veggies_answer or has_grain_issues or has_legume_issues or has_lean_meat_issues or has_seafood_issues or dairy_data.has_dairy_0 or dairy_data.has_dairy_low or result.show_oil_advice or has_liquid_issues or has_salt_addition_issues or has_special_foof_issues or has_supplements_issues %}
+{% if has_snack_issues or fast_food_data.has_fast_food_079 or fast_food_data.has_fast_food_05 or fast_food_data.has_fast_food_0 or has_soda_issues or has_sosage_issues or has_smoked_issues or has_fat_products_issues or has_sauce_issues or has_fried_potato_issues or has_salted_issues or has_high_fat_dairy_issues or has_baking_issues or has_fruits_veggies_answer or has_grain_issues or has_legume_issues or has_lean_meat_issues or has_seafood_issues or dairy_data.has_dairy_0 or dairy_data.has_dairy_low or has_oil_answer or has_liquid_issues or has_salt_addition_issues or has_special_foof_issues or has_supplements_issues %}
 <!-- Блок с рекомендациями по снекам -->
 {% if has_snack_issues %}
 <div class="alert alert-danger mt-3">
@@ -18,7 +18,7 @@
             <div class="col-md-6">
                 <p class="fw-bold">Последствия:</p>
                 <ul>
-                    <li>+30% риск ожирения</li>
+                    <li>Риск ожирения</li>
                     <li>Нарушение липидного обмена</li>
                     <li>Повреждение слизистой ЖКТ</li>
                     <li>Инсулинорезистентность</li>
@@ -273,7 +273,7 @@
     <div class="alert-text">
         Рыба и морепродукты являются высокоценными источниками животного белка с прекрасной усвояемостью,
         эссенциальными ПНЖК в составе морского жира, витаминов А, D, группы В, важнейшими биодоступными
-        микроэлементами  - йодом и селеном.
+        микроэлементами - йодом и селеном.
     </div>
 </div>
 {% endif %}
@@ -282,10 +282,10 @@
 <div class="alert alert-danger mt-4">
     <h5 class="alert-heading">Внимание! Риск дефицита</h5>
     <div class="alert-text">
-        У Вас наблюдается высокий риск развития белковой  и микронутриентной недостаточности, остеопении,
+        У Вас наблюдается высокий риск развития белковой и микронутриентной недостаточности, остеопении,
         остеопороза и других нарушений в состоянии здоровья. Если Вы не можете потреблять молочные продукты,
         то необходимо найти альтернативные источники полноценного белка и кальция.
-
+        <br>
         Молоко и кисломолочные продукты являются важнейшими источниками полноценного белка,
         сбалансированных макро- и микроэлементов, особенно Ca (P, Mg, Zn, Fe, Cu),
         витаминов (A, D, бета-каротина, B1, B2, B12).
@@ -298,7 +298,7 @@
 </div>
 {% endif %}
 
-{% if dairy_data.has_dairy_low or dairy_data.has_dairy_0 %}
+{% if dairy_data.has_dairy_low %}
 <div class="alert alert-warning mt-4">
     <h5 class="alert-heading">Рекомендации по молочным продуктам</h5>
     <div class="alert-text">
@@ -314,7 +314,7 @@
 </div>
 {% endif %}
 
-{% if result.show_oil_advice %}
+{% if has_oil_answer %}
 <div class="alert alert-info mt-4">
     <h5 class="alert-heading">Рекомендации по растительным маслам</h5>
     <div class="alert-text">
@@ -339,8 +339,8 @@
 <div class="alert alert-warning mt-4">
     <h5 class="alert-heading">Риски избыточного потребления соли</h5>
     <div class="alert-text">
-        Доказано, что избыточное потребление соли -более 5г в сутки является ведущим фактором риска развития
-        артериальной гипертензии и сопутствующих ей осложнений, нарушает функции почек и ведет к потери
+        Доказано, что избыточное потребление соли - более 5г в сутки является ведущим фактором риска развития
+        артериальной гипертензии и сопутствующих ей осложнений, нарушает функции почек и ведет к потере
         организмом кальция и в дальнейшем может привести к остеопении и остеопорозу
     </div>
 </div>
@@ -350,7 +350,7 @@
 <div class="alert alert-info mt-4">
     <h5 class="alert-heading">Оптимизация рациона</h5>
     <div class="alert-text">
-       В условиях повышенной потребности современного человека в качественной пищевой продукции с высокими
+        В условиях повышенной потребности современного человека в качественной пищевой продукции с высокими
         показателями биологической ценности целесообразно включение в рацион специализированной продукции
         для диетического питания, которая не содержит добавленных сахаров, скрытых насыщенных жиров и
         трансизомеров жирных кислот, с пониженным количеством соли, без искусственных пищевых добавок и
